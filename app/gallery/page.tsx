@@ -33,9 +33,8 @@ export default function GalleryPage() {
   const [activeIndex, setActiveIndex] = useState(30);
   const [hasIntroAnimated, setHasIntroAnimated] = useState(false);
 
-  // Pointer drag swipe vs click tracking
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
-  const dragMaxDistRef = useRef(0);
+  // Mobile touch swipe tracking (does not interfere with desktop mouse clicks)
+  const touchStartXRef = useRef<number | null>(null);
 
   const activeCard = ((activeIndex % cards.length) + cards.length) % cards.length;
 
@@ -49,31 +48,16 @@ export default function GalleryPage() {
     setActiveIndex((current) => current + direction);
   }, []);
 
-  const handleStagePointerDown = useCallback((e: React.PointerEvent) => {
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    dragMaxDistRef.current = 0;
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
   }, []);
 
-  const handleStagePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragStartRef.current) return;
-    const dist = Math.hypot(
-      e.clientX - dragStartRef.current.x,
-      e.clientY - dragStartRef.current.y,
-    );
-    if (dist > dragMaxDistRef.current) {
-      dragMaxDistRef.current = dist;
-    }
-  }, []);
-
-  const handleStagePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragStartRef.current) return;
-      const dx = e.clientX - dragStartRef.current.x;
-      const dy = e.clientY - dragStartRef.current.y;
-      dragStartRef.current = null;
-
-      // Horizontal swipe detection (> 45px)
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartXRef.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartXRef.current;
+      touchStartXRef.current = null;
+      if (Math.abs(dx) > 40) {
         changeCard(dx < 0 ? 1 : -1);
       }
     },
@@ -215,9 +199,8 @@ export default function GalleryPage() {
             */}
             <div 
               className="relative h-[min(68svh,36rem)] sm:h-[min(70svh,38rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center select-none"
-              onPointerDown={handleStagePointerDown}
-              onPointerMove={handleStagePointerMove}
-              onPointerUp={handleStagePointerUp}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
             >
               {/* Soft atmospheric firelight glow behind center card with smooth radial falloff */}
               <div 
@@ -225,8 +208,8 @@ export default function GalleryPage() {
                 aria-hidden="true"
               />
 
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]"
+              <div
+                className="pointer-events-none absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]"
               >
                 {visibleSlots.map((signedOffset) => {
                   const itemIndex = activeIndex + signedOffset;
@@ -235,14 +218,14 @@ export default function GalleryPage() {
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
 
-                  // 3D Scale & Depth hierarchy matching original grand presentation:
-                  // Center card: scale 1.25, z: 80px (commanding, pulled forward)
-                  // Adjacent cards (-1, +1): scale 0.80, z: -50px, rotateY ±8deg
-                  // Outer cards (-2, +2): scale 0.62, z: -140px, rotateY ±13deg
+                  // 3D Scale & Depth hierarchy (all Z >= 0 so cards are never occluded by 3D hit-plane):
+                  // Center card: scale 1.25, z: 60px (commanding, pulled forward)
+                  // Adjacent cards (-1, +1): scale 0.80, z: 20px, rotateY ±8deg
+                  // Outer cards (-2, +2): scale 0.62, z: 0px, rotateY ±13deg
                   const cardScale =
                     distance === 0 ? 1.25 : distance === 1 ? 0.80 : 0.62;
                   const cardZ =
-                    distance === 0 ? 80 : distance === 1 ? -50 : -140;
+                    distance === 0 ? 60 : distance === 1 ? 20 : 0;
                   const cardRotateY =
                     distance === 0 ? 0 : signedOffset * -8;
                   const cardOpacity =
@@ -260,7 +243,7 @@ export default function GalleryPage() {
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
+                      className={`pointer-events-auto absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
                         distance >= 2 ? "gallery-card-outer" : ""
                       }`}
                       animate={{
@@ -292,8 +275,9 @@ export default function GalleryPage() {
                           : { type: "spring", stiffness: 280, damping: 28 }
                       }
                       onClick={() => {
-                        if (dragMaxDistRef.current > 25) return;
-                        setActiveIndex(itemIndex);
+                        if (signedOffset !== 0) {
+                          changeCard(signedOffset);
+                        }
                       }}
                       aria-label={`${card.alt}${isActive ? ", selected" : ", click to jump to this card"}`}
                       aria-current={isActive ? "true" : undefined}
@@ -313,7 +297,7 @@ export default function GalleryPage() {
                     </motion.button>
                   );
                 })}
-              </motion.div>
+              </div>
             </div>
 
             {/* Custom Golden Slider with Pentagram Thumb (placed downward so it never overlaps cards) */}
