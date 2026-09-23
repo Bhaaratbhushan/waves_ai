@@ -9,6 +9,7 @@ import LampToggle from "./LampToggle";
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/" || pathname === "/home";
+  const isGallery = pathname === "/gallery";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Prevent scrolling when mobile menu is open
@@ -32,7 +33,9 @@ export default function Navbar() {
 
   const navItems = isHome
     ? ["Home", "Events", "Gallery", "About", "Sponsors"]
-    : ["Home", "Events", "Gallery", "About", "Sponsors", "Register"];
+    : isGallery
+      ? ["Home", "Events", "Gallery", "About", "Sponsors", "Contact"]
+      : ["Home", "Events", "Gallery", "About", "Sponsors", "Register"];
 
   // Check if a nav item matches the current route
   const isActive = (item: string) => {
