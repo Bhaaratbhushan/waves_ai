@@ -4,7 +4,6 @@ import Image from "next/image";
 import {
   AnimatePresence,
   motion,
-  type PanInfo,
 } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 
@@ -27,7 +26,6 @@ const cards = [
 ];
 
 const visibleSlots = [-2, -1, 0, 1, 2];
-const SWIPE_DISTANCE = 48;
 
 export default function GalleryPage() {
   const [isBookOpened, setIsBookOpened] = useState(false);
@@ -43,29 +41,30 @@ export default function GalleryPage() {
     setHasIntroAnimated(false);
   }, []);
 
-  // On opening the book, smoothly animate from leftmost card (0) to middle card (1)
-  // to demonstrate to the user that cards and slider are interactive and dynamic.
-  useEffect(() => {
-    if (isBookOpened && !hasIntroAnimated) {
-      const timer = setTimeout(() => {
-        setActiveIndex(30 + 1);
-        setHasIntroAnimated(true);
-      }, 380);
-      return () => clearTimeout(timer);
-    }
-  }, [isBookOpened, hasIntroAnimated]);
-
   const changeCard = useCallback((direction: number) => {
     setActiveIndex((current) => current + direction);
   }, []);
 
-  const handleDragEnd = useCallback(
-    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (Math.abs(info.offset.x) < SWIPE_DISTANCE) return;
-      changeCard(info.offset.x < 0 ? 1 : -1);
-    },
-    [changeCard],
-  );
+  const handleOpenBookIntro = useCallback(() => {
+    if (!hasIntroAnimated) {
+      const timer = setTimeout(() => {
+        setActiveIndex(31);
+        setHasIntroAnimated(true);
+      }, 240);
+      return () => clearTimeout(timer);
+    }
+  }, [hasIntroAnimated]);
+
+  // Guaranteed intro glide fallback if onAnimationComplete is skipped by browser/performance
+  useEffect(() => {
+    if (isBookOpened && !hasIntroAnimated) {
+      const timer = setTimeout(() => {
+        setActiveIndex((prev) => (prev % cards.length === 0 ? prev + 1 : prev));
+        setHasIntroAnimated(true);
+      }, 850);
+      return () => clearTimeout(timer);
+    }
+  }, [isBookOpened, hasIntroAnimated]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -81,6 +80,7 @@ export default function GalleryPage() {
         event.preventDefault();
         setIsBookOpened(false);
         setHasIntroAnimated(false);
+        setActiveIndex(30);
       }
     }
 
@@ -168,30 +168,30 @@ export default function GalleryPage() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
+            onAnimationComplete={handleOpenBookIntro}
             tabIndex={0}
-            aria-label="Gallery carousel. Use left and right arrow keys or slider to change cards."
+            aria-label="Gallery carousel. Use left and right arrow keys, click any card, or use the slider to change cards."
           >
-            {/* 3D Cards Carousel Stage matching MacBook reference:
-                - Grand, prominent center card commanding the screen
-                - Dramatic 3D depth with inward tilt, z-translation, and firelight illumination
-                - Clear spacing between cards (no overlap)
-                - Last cards in stack are half hidden at the screen edges
-                - overflow-visible ensures drop-shadows blend smoothly into the fire without any clipped horizontal border
+            {/* 3D Cards Carousel Stage:
+                - Gracefully proportioned center card commanding attention without overlapping slider
+                - Smooth click-to-jump on all cards (unlocked from drag capture)
+                - Inward 3D tilt, z-translation, and firelight illumination
+                - Clear spacing between cards and half-hidden outer cards
             */}
-            <div className="relative h-[min(72svh,39rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center">
+            <div className="relative h-[min(62svh,29rem)] sm:h-[min(64svh,30rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center select-none">
               {/* Soft atmospheric firelight glow behind center card with smooth radial falloff */}
               <div 
-                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[22%] w-[min(88vw,34rem)] h-32 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(225,120,30,0.18)_0%,rgba(180,60,15,0.06)_50%,transparent_75%)] blur-2xl z-0"
+                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[20%] w-[min(80vw,30rem)] h-28 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(225,120,30,0.18)_0%,rgba(180,60,15,0.05)_50%,transparent_75%)] blur-2xl z-0"
                 aria-hidden="true"
               />
 
               <motion.div
                 className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]"
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={handleDragEnd}
-                whileDrag={{ cursor: "grabbing" }}
+                onPanEnd={(_event, info) => {
+                  if (Math.abs(info.offset.x) > 35 || Math.abs(info.velocity.x) > 250) {
+                    changeCard(info.offset.x < 0 ? 1 : -1);
+                  }
+                }}
               >
                 {visibleSlots.map((signedOffset) => {
                   const itemIndex = activeIndex + signedOffset;
@@ -200,34 +200,34 @@ export default function GalleryPage() {
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
 
-                  // 3D Scale & Depth hierarchy matching reference:
-                  // Center card: scale 1.25, z: 80px (dramatically larger, pulled forward)
-                  // Adjacent cards (-1, +1): scale 0.80, z: -50px, rotateY ±8deg (distinct step down)
-                  // Outer cards (-2, +2): scale 0.62, z: -140px, rotateY ±13deg (half hidden beyond edges)
+                  // Refined 3D Scale & Depth hierarchy:
+                  // Center card: scale 1.10, z: 55px (stays prominent center of attraction without crossing slider)
+                  // Adjacent cards (-1, +1): scale 0.85, z: -40px, rotateY ±7deg
+                  // Outer cards (-2, +2): scale 0.68, z: -110px, rotateY ±12deg
                   const cardScale =
-                    distance === 0 ? 1.25 : distance === 1 ? 0.80 : 0.62;
+                    distance === 0 ? 1.10 : distance === 1 ? 0.85 : 0.68;
                   const cardZ =
-                    distance === 0 ? 80 : distance === 1 ? -50 : -140;
+                    distance === 0 ? 55 : distance === 1 ? -40 : -110;
                   const cardRotateY =
-                    distance === 0 ? 0 : signedOffset * -8;
+                    distance === 0 ? 0 : signedOffset * -7;
                   const cardOpacity =
-                    distance === 0 ? 1 : distance === 1 ? 0.82 : 0.58;
+                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.60;
                   const cardZIndex =
                     distance === 0 ? 30 : distance === 1 ? 20 : 10;
                   const cardBrightness =
                     distance === 0
-                      ? "brightness(1.06) contrast(1.04)"
+                      ? "brightness(1.05) contrast(1.03)"
                       : distance === 1
-                      ? "brightness(0.78) contrast(1.02)"
-                      : "brightness(0.55) blur(0.5px)";
+                      ? "brightness(0.82) contrast(1.01)"
+                      : "brightness(0.60) blur(0.5px)";
 
                   return (
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 ${
+                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(10.5rem,48vw,14.5rem)] sm:w-[clamp(11rem,18.5vw,17rem)] h-[clamp(15.5rem,72vw,22rem)] sm:h-[clamp(16.5rem,28vw,25.5rem)] -translate-x-1/2 -translate-y-1/2 ${
                         isActive
-                          ? "cursor-grab active:cursor-grabbing"
+                          ? "cursor-default"
                           : "cursor-pointer hover:brightness-110"
                       } touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
                         distance >= 2 ? "gallery-card-outer" : ""
@@ -245,7 +245,7 @@ export default function GalleryPage() {
                       whileHover={
                         !isActive
                           ? { scale: cardScale * 1.05, y: -6, filter: "brightness(0.95)" }
-                          : { scale: 1.27 }
+                          : { scale: 1.12 }
                       }
                       transition={
                         isActive
@@ -260,37 +260,21 @@ export default function GalleryPage() {
                             }
                           : { type: "spring", stiffness: 280, damping: 28 }
                       }
-                      onPointerDown={(e) => {
-                        (e.currentTarget as HTMLButtonElement).dataset.downX = String(e.clientX);
-                        (e.currentTarget as HTMLButtonElement).dataset.downY = String(e.clientY);
-                      }}
-                      onPointerUp={(e) => {
-                        const downX = Number((e.currentTarget as HTMLButtonElement).dataset.downX ?? e.clientX);
-                        const downY = Number((e.currentTarget as HTMLButtonElement).dataset.downY ?? e.clientY);
-                        const moveDist = Math.hypot(e.clientX - downX, e.clientY - downY);
-                        if (moveDist < 10 && !isActive) {
-                          setActiveIndex(itemIndex);
-                        }
-                      }}
-                      onTap={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         if (!isActive) {
                           setActiveIndex(itemIndex);
                         }
                       }}
-                      onClick={() => {
-                        if (!isActive) {
-                          setActiveIndex(itemIndex);
-                        }
-                      }}
-                      aria-label={`${card.alt}${isActive ? ", selected" : ", click to view"}`}
+                      aria-label={`${card.alt}${isActive ? ", selected" : ", click to jump to this card"}`}
                       aria-current={isActive ? "true" : undefined}
                     >
                       <Image
                         src={card.src}
                         alt={card.alt}
                         fill
-                        sizes="(max-width: 640px) 60vw, 420px"
-                        className={`object-contain transition-all duration-300 ${
+                        sizes="(max-width: 640px) 55vw, 380px"
+                        className={`object-contain transition-all duration-300 pointer-events-none ${
                           isActive
                             ? "drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)] drop-shadow-[0_0_24px_rgba(235,130,35,0.22)]"
                             : "drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
@@ -303,8 +287,8 @@ export default function GalleryPage() {
               </motion.div>
             </div>
 
-            {/* Custom Golden Slider with Pentagram Thumb (snug underneath center card) */}
-            <div className="z-40 mt-2 sm:mt-3 flex w-[min(90vw,36rem)] sm:w-[min(82vw,46rem)] flex-col items-center">
+            {/* Custom Golden Slider with Pentagram Thumb (clear space below center card) */}
+            <div className="z-40 mt-6 sm:mt-8 flex w-[min(90vw,36rem)] sm:w-[min(82vw,44rem)] flex-col items-center">
               <label htmlFor="gallery-card-slider" className="sr-only">
                 Select gallery card
               </label>
