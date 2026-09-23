@@ -31,10 +31,29 @@ const SWIPE_DISTANCE = 48;
 
 export default function GalleryPage() {
   const [isBookOpened, setIsBookOpened] = useState(false);
-  // Start at a large multiple of 3 + 1 so card-2 is initially active (matches video)
-  const [activeIndex, setActiveIndex] = useState(30 + 1);
+  // Start at a multiple of 3 so card-1 (leftmost card, index % 3 === 0) is initial
+  const [activeIndex, setActiveIndex] = useState(30);
+  const [hasIntroAnimated, setHasIntroAnimated] = useState(false);
 
   const activeCard = ((activeIndex % cards.length) + cards.length) % cards.length;
+
+  const openBook = useCallback(() => {
+    setActiveIndex(30);
+    setIsBookOpened(true);
+    setHasIntroAnimated(false);
+  }, []);
+
+  // On opening the book, smoothly animate from leftmost card (0) to middle card (1)
+  // to demonstrate to the user that cards and slider are interactive and dynamic.
+  useEffect(() => {
+    if (isBookOpened && !hasIntroAnimated) {
+      const timer = setTimeout(() => {
+        setActiveIndex(30 + 1);
+        setHasIntroAnimated(true);
+      }, 380);
+      return () => clearTimeout(timer);
+    }
+  }, [isBookOpened, hasIntroAnimated]);
 
   const changeCard = useCallback((direction: number) => {
     setActiveIndex((current) => current + direction);
@@ -61,6 +80,7 @@ export default function GalleryPage() {
       } else if (event.key === "Escape") {
         event.preventDefault();
         setIsBookOpened(false);
+        setHasIntroAnimated(false);
       }
     }
 
@@ -115,7 +135,7 @@ export default function GalleryPage() {
                 <motion.button
                   type="button"
                   className="group relative h-full w-full cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505]"
-                  onClick={() => setIsBookOpened(true)}
+                  onClick={openBook}
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.96 }}
                   transition={{ type: "spring", stiffness: 350, damping: 22 }}
@@ -156,11 +176,12 @@ export default function GalleryPage() {
                 - Dramatic 3D depth with inward tilt, z-translation, and firelight illumination
                 - Clear spacing between cards (no overlap)
                 - Last cards in stack are half hidden at the screen edges
+                - overflow-visible ensures drop-shadows blend smoothly into the fire without any clipped horizontal border
             */}
-            <div className="relative h-[min(72svh,39rem)] w-full overflow-hidden [perspective:1400px] flex items-center justify-center">
-              {/* Warm firelight ambient glow directly beneath center card */}
+            <div className="relative h-[min(72svh,39rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center">
+              {/* Soft atmospheric firelight glow behind center card with smooth radial falloff */}
               <div 
-                className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-24 rounded-full bg-gradient-to-t from-amber-600/25 via-[#e5a73e]/15 to-transparent blur-3xl z-10"
+                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[22%] w-[min(88vw,34rem)] h-32 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(225,120,30,0.18)_0%,rgba(180,60,15,0.06)_50%,transparent_75%)] blur-2xl z-0"
                 aria-hidden="true"
               />
 
@@ -204,7 +225,11 @@ export default function GalleryPage() {
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing ${
+                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 ${
+                        isActive
+                          ? "cursor-grab active:cursor-grabbing"
+                          : "cursor-pointer hover:brightness-110"
+                      } touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
                         distance >= 2 ? "gallery-card-outer" : ""
                       }`}
                       animate={{
@@ -219,7 +244,7 @@ export default function GalleryPage() {
                       }}
                       whileHover={
                         !isActive
-                          ? { scale: cardScale * 1.05, y: -6, filter: "brightness(0.92)" }
+                          ? { scale: cardScale * 1.05, y: -6, filter: "brightness(0.95)" }
                           : { scale: 1.27 }
                       }
                       transition={
@@ -235,12 +260,29 @@ export default function GalleryPage() {
                             }
                           : { type: "spring", stiffness: 280, damping: 28 }
                       }
+                      onPointerDown={(e) => {
+                        (e.currentTarget as HTMLButtonElement).dataset.downX = String(e.clientX);
+                        (e.currentTarget as HTMLButtonElement).dataset.downY = String(e.clientY);
+                      }}
+                      onPointerUp={(e) => {
+                        const downX = Number((e.currentTarget as HTMLButtonElement).dataset.downX ?? e.clientX);
+                        const downY = Number((e.currentTarget as HTMLButtonElement).dataset.downY ?? e.clientY);
+                        const moveDist = Math.hypot(e.clientX - downX, e.clientY - downY);
+                        if (moveDist < 10 && !isActive) {
+                          setActiveIndex(itemIndex);
+                        }
+                      }}
+                      onTap={() => {
+                        if (!isActive) {
+                          setActiveIndex(itemIndex);
+                        }
+                      }}
                       onClick={() => {
                         if (!isActive) {
                           setActiveIndex(itemIndex);
                         }
                       }}
-                      aria-label={`${card.alt}${isActive ? ", selected" : ""}`}
+                      aria-label={`${card.alt}${isActive ? ", selected" : ", click to view"}`}
                       aria-current={isActive ? "true" : undefined}
                     >
                       <Image
@@ -250,8 +292,8 @@ export default function GalleryPage() {
                         sizes="(max-width: 640px) 60vw, 420px"
                         className={`object-contain transition-all duration-300 ${
                           isActive
-                            ? "drop-shadow-[0_28px_45px_rgba(0,0,0,0.98)] drop-shadow-[0_0_35px_rgba(235,130,35,0.38)]"
-                            : "drop-shadow-[0_18px_28px_rgba(0,0,0,0.88)]"
+                            ? "drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)] drop-shadow-[0_0_24px_rgba(235,130,35,0.22)]"
+                            : "drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
                         }`}
                         priority={isActive}
                       />
