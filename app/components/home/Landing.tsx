@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import DoorLink from "../../_doors/DoorLink";
 import { ASSETS, LAYERS, NAV_LINKS, type Box } from "./design";
@@ -97,9 +96,9 @@ export default function Landing({ phase }: { phase: Phase }) {
         <nav ref={navRef} className={styles.nav} aria-label="Main">
           {NAV_LINKS.map((link) =>
             link.href ? (
-              <Link key={link.label} href={link.href} className={styles.navLink}>
+              <DoorLink key={link.label} href={link.href} className={styles.navLink}>
                 {link.label}
-              </Link>
+              </DoorLink>
             ) : (
               <button key={link.label} type="button" className={styles.navLink}>
                 {link.label}

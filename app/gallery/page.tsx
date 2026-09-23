@@ -102,42 +102,42 @@ export default function GalleryPage() {
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Ambient Red Glow Centered over Altar */}
-            <motion.div
-              className="pointer-events-none absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-[#b51d13]/35 blur-3xl sm:h-84 sm:w-84"
-              animate={{ opacity: [0.28, 0.6, 0.28], scale: [0.92, 1.1, 0.92] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+            {/* Ambient Red Glow Centered over Altar Podium */}
+            <div
+              className="grimoire-pedestal-anchor pointer-events-none absolute h-64 w-64 rounded-full bg-[#b51d13]/40 blur-3xl sm:h-84 sm:w-84 grimoire-glow-pulse"
               aria-hidden="true"
             />
 
-            {/* Floating Grimoire Button Centered over Altar Stone */}
-            <div className="pointer-events-auto absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 h-[min(65vw,22rem)] w-[min(65vw,22rem)] sm:h-[min(22vw,21rem)] sm:w-[min(22vw,21rem)]">
-              <motion.button
-                type="button"
-                className="group relative h-full w-full cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505]"
-                onClick={() => setIsBookOpened(true)}
-                animate={{ y: [0, -14, 0] }}
-                whileHover={{ scale: 1.08 }}
-                whileFocus={{ scale: 1.08 }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-                aria-label="Open the WAVES gallery grimoire"
-              >
-                <Image
-                  src="/gallery/book-grimoire.png"
-                  alt="An ornate grimoire resting on an altar"
-                  fill
-                  priority
-                  sizes="(max-width: 640px) 65vw, 360px"
-                  className="object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,0.7)] transition-opacity duration-300 group-hover:opacity-0 group-focus-visible:opacity-0"
-                />
-                <Image
-                  src="/gallery/book-grimoire_onhover.png"
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 65vw, 360px"
-                  className="object-contain opacity-0 drop-shadow-[0_28px_34px_rgba(200,30,10,0.55)] transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
-                />
-              </motion.button>
+            {/* Floating Grimoire Container Positioned Directly on Altar Podium */}
+            <div className="grimoire-pedestal-anchor pointer-events-auto absolute h-[min(65vw,18rem)] w-[min(65vw,18rem)] sm:h-[min(20vw,18rem)] sm:w-[min(20vw,18rem)]">
+              {/* Continuous Levitating Float Wrapper (always floats up and down) */}
+              <div className="grimoire-floating-container relative h-full w-full">
+                <motion.button
+                  type="button"
+                  className="group relative h-full w-full cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505]"
+                  onClick={() => setIsBookOpened(true)}
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 22 }}
+                  aria-label="Open the WAVES gallery grimoire"
+                >
+                  <Image
+                    src="/gallery/book-grimoire.png"
+                    alt="An ornate grimoire resting on the altar podium"
+                    fill
+                    priority
+                    sizes="(max-width: 640px) 65vw, 360px"
+                    className="object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,0.7)] transition-opacity duration-300 group-hover:opacity-0 group-focus-visible:opacity-0"
+                  />
+                  <Image
+                    src="/gallery/book-grimoire_onhover.png"
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 65vw, 360px"
+                    className="object-contain opacity-0 drop-shadow-[0_28px_34px_rgba(200,30,10,0.55)] transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  />
+                </motion.button>
+              </div>
             </div>
           </motion.section>
         ) : (
@@ -278,6 +278,47 @@ export default function GalleryPage() {
           </motion.section>
         )}
       </AnimatePresence>
+
+      <style jsx global>{`
+        .grimoire-pedestal-anchor {
+          left: max(58.5%, calc(50% + 13vh));
+          top: 51.5%;
+          transform: translate(-50%, -50%);
+        }
+        @media (max-width: 639px) {
+          .grimoire-pedestal-anchor {
+            left: max(56.5%, calc(50% + 8vh));
+            top: 50.5%;
+            transform: translate(-50%, -50%);
+          }
+        }
+        @keyframes grimoire-levitate {
+          0%, 100% {
+            transform: translateY(-13px);
+          }
+          50% {
+            transform: translateY(7px);
+          }
+        }
+        .grimoire-floating-container {
+          animation: grimoire-levitate 3.4s ease-in-out infinite;
+          will-change: transform;
+        }
+        @keyframes grimoire-glow-pulse {
+          0%, 100% {
+            opacity: 0.3;
+            transform: translate(-50%, -50%) scale(0.92);
+          }
+          50% {
+            opacity: 0.65;
+            transform: translate(-50%, -50%) scale(1.1);
+          }
+        }
+        .grimoire-glow-pulse {
+          animation: grimoire-glow-pulse 3.8s ease-in-out infinite;
+          will-change: transform, opacity;
+        }
+      `}</style>
     </main>
   );
 }

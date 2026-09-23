@@ -54,7 +54,7 @@ export const ASSETS = {
 export const NAV_LINKS: { label: string; href?: string }[] = [
   { label: "Home", href: "/" },
   { label: "Events", href: "/events" },
-  { label: "Gallery" },
+  { label: "Gallery", href: "/gallery" },
   { label: "About" },
   { label: "Sponsors" },
   { label: "Contact" },

@@ -213,3 +213,41 @@ body {
     border-top: 1px solid rgba(212, 175, 55, 0.15);
   }
 }
+
+/* ── Gallery Grimoire floating on podium ─────────────────────────────── */
+
+@keyframes grimoire-levitate {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.grimoire-float-wrapper {
+  animation: grimoire-levitate 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.grimoire-float-wrapper:hover {
+  animation-play-state: paused;
+}
+
+.gallery-book-anchor,
+.gallery-book-glow {
+  left: max(58.5%, calc(50% + 13.05vh));
+  top: 48.5%;
+}
+
+@media (max-width: 639px) {
+  .gallery-book-anchor,
+  .gallery-book-glow {
+    left: 56.5%;
+    top: 48%;
+  }
+}
+
