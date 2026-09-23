@@ -152,12 +152,20 @@ export default function GalleryPage() {
             aria-label="Gallery carousel. Use left and right arrow keys or slider to change cards."
           >
             {/* 3D Cards Carousel Stage matching MacBook reference:
+                - Grand, prominent center card commanding the screen
+                - Dramatic 3D depth with inward tilt, z-translation, and firelight illumination
                 - Clear spacing between cards (no overlap)
                 - Last cards in stack are half hidden at the screen edges
             */}
-            <div className="relative h-[min(68svh,34rem)] w-full overflow-hidden [perspective:1200px] flex items-center justify-center">
+            <div className="relative h-[min(72svh,39rem)] w-full overflow-hidden [perspective:1400px] flex items-center justify-center">
+              {/* Warm firelight ambient glow directly beneath center card */}
+              <div 
+                className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-1/2 w-80 h-24 rounded-full bg-gradient-to-t from-amber-600/25 via-[#e5a73e]/15 to-transparent blur-3xl z-10"
+                aria-hidden="true"
+              />
+
               <motion.div
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.2}
@@ -171,33 +179,62 @@ export default function GalleryPage() {
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
 
-                  // Scale & opacity matching MacBook reference:
-                  // Center card: scale 1.0, opacity 1
-                  // Adjacent cards (-1, +1): scale 0.85, opacity 0.85 (clear visible gap between cards)
-                  // Outer cards (-2, +2): scale 0.70, opacity 0.60 (half hidden beyond left and right screen borders)
+                  // 3D Scale & Depth hierarchy matching reference:
+                  // Center card: scale 1.25, z: 80px (dramatically larger, pulled forward)
+                  // Adjacent cards (-1, +1): scale 0.80, z: -50px, rotateY ±8deg (distinct step down)
+                  // Outer cards (-2, +2): scale 0.62, z: -140px, rotateY ±13deg (half hidden beyond edges)
                   const cardScale =
-                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.70;
+                    distance === 0 ? 1.25 : distance === 1 ? 0.80 : 0.62;
+                  const cardZ =
+                    distance === 0 ? 80 : distance === 1 ? -50 : -140;
+                  const cardRotateY =
+                    distance === 0 ? 0 : signedOffset * -8;
                   const cardOpacity =
-                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.60;
+                    distance === 0 ? 1 : distance === 1 ? 0.82 : 0.58;
                   const cardZIndex =
                     distance === 0 ? 30 : distance === 1 ? 20 : 10;
+                  const cardBrightness =
+                    distance === 0
+                      ? "brightness(1.06) contrast(1.04)"
+                      : distance === 1
+                      ? "brightness(0.78) contrast(1.02)"
+                      : "brightness(0.55) blur(0.5px)";
 
                   return (
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11rem,52vw,16rem)] sm:w-[clamp(10.5rem,19.5vw,18.5rem)] h-[clamp(17rem,80vw,25rem)] sm:h-[clamp(16.5rem,30.5vw,29rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing ${
+                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing ${
                         distance >= 2 ? "gallery-card-outer" : ""
                       }`}
                       animate={{
                         x: `calc(${signedOffset} * var(--gallery-card-spacing))`,
-                        y: "0%",
-                        rotateY: 0,
+                        y: isActive ? [-3, 3, -3] : 0,
+                        z: cardZ,
+                        rotateY: cardRotateY,
                         scale: cardScale,
                         opacity: cardOpacity,
                         zIndex: cardZIndex,
+                        filter: cardBrightness,
                       }}
-                      transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                      whileHover={
+                        !isActive
+                          ? { scale: cardScale * 1.05, y: -6, filter: "brightness(0.92)" }
+                          : { scale: 1.27 }
+                      }
+                      transition={
+                        isActive
+                          ? {
+                              y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+                              x: { type: "spring", stiffness: 280, damping: 28 },
+                              scale: { type: "spring", stiffness: 280, damping: 28 },
+                              z: { type: "spring", stiffness: 280, damping: 28 },
+                              rotateY: { type: "spring", stiffness: 280, damping: 28 },
+                              opacity: { duration: 0.25 },
+                              filter: { duration: 0.25 },
+                            }
+                          : { type: "spring", stiffness: 280, damping: 28 }
+                      }
                       onClick={() => {
                         if (!isActive) {
                           setActiveIndex(itemIndex);
@@ -210,8 +247,12 @@ export default function GalleryPage() {
                         src={card.src}
                         alt={card.alt}
                         fill
-                        sizes="(max-width: 640px) 55vw, 360px"
-                        className="object-contain drop-shadow-[0_22px_28px_rgba(0,0,0,0.85)]"
+                        sizes="(max-width: 640px) 60vw, 420px"
+                        className={`object-contain transition-all duration-300 ${
+                          isActive
+                            ? "drop-shadow-[0_28px_45px_rgba(0,0,0,0.98)] drop-shadow-[0_0_35px_rgba(235,130,35,0.38)]"
+                            : "drop-shadow-[0_18px_28px_rgba(0,0,0,0.88)]"
+                        }`}
                         priority={isActive}
                       />
                     </motion.button>
@@ -220,15 +261,15 @@ export default function GalleryPage() {
               </motion.div>
             </div>
 
-            {/* Custom Golden Slider with Pentagram Thumb (wider track matching MacBook frame) */}
-            <div className="z-40 mt-5 sm:mt-8 flex w-[min(90vw,36rem)] sm:w-[min(82vw,46rem)] flex-col items-center">
+            {/* Custom Golden Slider with Pentagram Thumb (snug underneath center card) */}
+            <div className="z-40 mt-2 sm:mt-3 flex w-[min(90vw,36rem)] sm:w-[min(82vw,46rem)] flex-col items-center">
               <label htmlFor="gallery-card-slider" className="sr-only">
                 Select gallery card
               </label>
 
               <div className="relative w-full h-8 flex items-center">
                 {/* Background track with golden border */}
-                <div className="relative w-full h-[9px] rounded-full bg-[#180606]/90 border border-[#c89e48]/55 shadow-[inset_0_1px_4px_rgba(0,0,0,0.9),0_0_12px_rgba(0,0,0,0.7)] overflow-hidden">
+                <div className="relative w-full h-[9px] rounded-full bg-[#180606]/95 border border-[#c89e48]/60 shadow-[inset_0_1px_5px_rgba(0,0,0,0.95),0_0_14px_rgba(0,0,0,0.75)] overflow-hidden">
                   {/* Glowing progress fill bar */}
                   <motion.div
                     className="h-full rounded-full"
@@ -238,14 +279,14 @@ export default function GalleryPage() {
                     transition={{ type: "spring", stiffness: 320, damping: 30 }}
                     style={{
                       background: "linear-gradient(90deg, #6e270c 0%, #b8621b 30%, #e5a73e 70%, #f6dc88 100%)",
-                      boxShadow: "0 0 12px rgba(229, 167, 62, 0.75)",
+                      boxShadow: "0 0 14px rgba(229, 167, 62, 0.8)",
                     }}
                   />
                 </div>
 
-                {/* Animated Pentagram Thumb Medallion */}
+                {/* Animated Pentagram Thumb Medallion with warm glowing ember aura */}
                 <motion.div
-                  className="absolute top-1/2 pointer-events-none z-20"
+                  className="absolute top-1/2 pointer-events-none z-20 group"
                   animate={{
                     left: `calc(${(activeCard / (cards.length - 1)) * 100}% - ${(activeCard / (cards.length - 1)) * 36}px)`,
                     y: "-50%",
@@ -262,7 +303,7 @@ export default function GalleryPage() {
                     width={36}
                     height={36}
                     priority
-                    className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] drop-shadow-[0_0_8px_rgba(229,167,62,0.6)]"
+                    className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.98)] drop-shadow-[0_0_10px_rgba(240,180,60,0.75)]"
                   />
                 </motion.div>
 
@@ -290,7 +331,7 @@ export default function GalleryPage() {
 
       <style jsx global>{`
         :root {
-          --gallery-card-spacing: clamp(13rem, 25vw, 24rem);
+          --gallery-card-spacing: clamp(14rem, 25.5vw, 25rem);
         }
         @media (max-width: 639px) {
           :root {
