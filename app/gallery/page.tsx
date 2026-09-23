@@ -29,6 +29,7 @@ const visibleSlots = [-2, -1, 0, 1, 2];
 
 export default function GalleryPage() {
   const [isBookOpened, setIsBookOpened] = useState(false);
+  const [isBookHovered, setIsBookHovered] = useState(false);
   // Start at a multiple of 3 so card-1 (leftmost card, index % 3 === 0) is initial
   const [activeIndex, setActiveIndex] = useState(30);
   const [hasIntroAnimated, setHasIntroAnimated] = useState(false);
@@ -122,14 +123,17 @@ export default function GalleryPage() {
         sizes="100vw"
         className="object-cover object-[60%_center] sm:object-center"
       />
+      {/* Subtle vignette grounding outer cavern walls while keeping center cavern transparent */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,transparent_22%,rgba(13,0,0,0.18)_62%,rgba(8,0,0,0.72)_100%)]" />
+
+      {/* Atmospheric Crimson Smoke & Fiery Mist (vibrant even when idle, matching MacBook Pro 16_ - 4.png) */}
       <Image
         src="/gallery/bg-red-glow.png"
         alt=""
         fill
         sizes="100vw"
-        className="pointer-events-none object-cover object-[60%_center] sm:object-center opacity-80 mix-blend-screen"
+        className="pointer-events-none object-cover object-[60%_center] sm:object-center opacity-100 mix-blend-screen"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,transparent_20%,rgba(13,0,0,0.2)_62%,rgba(8,0,0,0.72)_100%)]" />
 
       <AnimatePresence mode="wait" initial={false}>
         {!isBookOpened ? (
@@ -141,21 +145,30 @@ export default function GalleryPage() {
             exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Ambient Red Glow Centered over Altar Podium */}
+            {/* Ambient Crimson Aura & Occult Mist Centered over Altar Podium (visible even when idle) */}
             <div
-              className="grimoire-pedestal-anchor pointer-events-none absolute h-64 w-64 rounded-full bg-[#b51d13]/40 blur-3xl sm:h-84 sm:w-84 grimoire-glow-pulse"
+              className="grimoire-pedestal-anchor pointer-events-none absolute h-[24rem] w-[24rem] sm:h-[32rem] sm:w-[32rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(235,32,15,0.48)_0%,rgba(185,22,10,0.28)_44%,rgba(110,10,5,0.1)_70%,transparent_85%)] blur-2xl sm:blur-3xl z-0"
+              aria-hidden="true"
+            />
+            <div
+              className="grimoire-pedestal-anchor pointer-events-none absolute h-64 w-64 rounded-full bg-[#cc1a10]/35 blur-3xl sm:h-84 sm:w-84 grimoire-glow-pulse z-0"
               aria-hidden="true"
             />
 
             {/* Floating Grimoire Container Positioned Directly on Altar Podium */}
             <div className="grimoire-pedestal-anchor pointer-events-auto absolute h-[min(62vw,16.5rem)] w-[min(62vw,16.5rem)] sm:h-[min(20vw,18rem)] sm:w-[min(20vw,18rem)]">
-              {/* Continuous Levitating Float Wrapper (always floats up and down) */}
-              <div className="grimoire-floating-container relative h-full w-full">
+              {/* Levitating Float Wrapper - pauses immediately when hovered, matching screen recording */}
+              <div 
+                className="grimoire-floating-container relative h-full w-full"
+                style={{ animationPlayState: isBookHovered ? "paused" : "running" }}
+              >
                 <motion.button
                   type="button"
                   className="group relative h-full w-full cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505]"
                   onClick={openBook}
-                  whileHover={{ scale: 1.08 }}
+                  onMouseEnter={() => setIsBookHovered(true)}
+                  onMouseLeave={() => setIsBookHovered(false)}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.96 }}
                   transition={{ type: "spring", stiffness: 350, damping: 22 }}
                   aria-label="Open the WAVES gallery grimoire"
@@ -404,6 +417,10 @@ export default function GalleryPage() {
         .grimoire-floating-container {
           animation: grimoire-levitate 3.4s ease-in-out infinite;
           will-change: transform;
+        }
+        .grimoire-floating-container:hover,
+        .grimoire-floating-container:focus-within {
+          animation-play-state: paused !important;
         }
         @keyframes grimoire-glow-pulse {
           0%, 100% {
