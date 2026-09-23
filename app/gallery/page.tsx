@@ -10,33 +10,34 @@ import { useCallback, useEffect, useState } from "react";
 
 const cards = [
   {
+    id: "card-1",
     src: "/gallery/card-1.png",
-    alt: "WAVES gallery card one",
+    alt: "The Horned Guardian",
   },
   {
+    id: "card-2",
     src: "/gallery/card-2.png",
-    alt: "WAVES gallery card two",
+    alt: "The Ascension Angel",
   },
   {
+    id: "card-3",
     src: "/gallery/card-3.png",
-    alt: "WAVES gallery card three",
+    alt: "The Flame Awakening",
   },
 ];
 
-const carouselSlots = [-2, -1, 0, 1, 2];
-
-const SWIPE_DISTANCE = 56;
-
-function wrapIndex(index: number) {
-  return (index + cards.length) % cards.length;
-}
+const visibleSlots = [-2, -1, 0, 1, 2];
+const SWIPE_DISTANCE = 48;
 
 export default function GalleryPage() {
   const [isBookOpened, setIsBookOpened] = useState(false);
-  const [activeCard, setActiveCard] = useState(1);
+  // Start at a large multiple of 3 + 1 so card-2 is initially active (matches video)
+  const [activeIndex, setActiveIndex] = useState(30 + 1);
+
+  const activeCard = ((activeIndex % cards.length) + cards.length) % cards.length;
 
   const changeCard = useCallback((direction: number) => {
-    setActiveCard((current) => wrapIndex(current + direction));
+    setActiveIndex((current) => current + direction);
   }, []);
 
   const handleDragEnd = useCallback(
@@ -72,6 +73,7 @@ export default function GalleryPage() {
       className="relative isolate flex min-h-svh w-full items-center justify-center overflow-hidden bg-[#100202] text-[#f8e8c6]"
       aria-label="WAVES gallery"
     >
+      {/* Altar & Cavern Background */}
       <Image
         src="/gallery/bg-gallery-altar.png"
         alt=""
@@ -94,27 +96,30 @@ export default function GalleryPage() {
         {!isBookOpened ? (
           <motion.section
             key="closed-book"
-            className="pointer-events-none absolute inset-0 z-10"
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.25 } }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
+            {/* Ambient Red Glow Centered over Altar */}
             <motion.div
-              className="gallery-book-glow pointer-events-none absolute h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#b51d13]/30 blur-3xl sm:h-80 sm:w-80"
-              animate={{ opacity: [0.28, 0.56, 0.28], scale: [0.9, 1.08, 0.9] }}
-              transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+              className="pointer-events-none absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-[#b51d13]/35 blur-3xl sm:h-84 sm:w-84"
+              animate={{ opacity: [0.28, 0.6, 0.28], scale: [0.92, 1.1, 0.92] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
               aria-hidden="true"
             />
-            <div className="gallery-book-anchor pointer-events-auto absolute h-[min(70vw,29rem)] w-[min(70vw,29rem)] -translate-x-1/2 -translate-y-1/2 sm:h-[min(20vw,20rem)] sm:w-[min(20vw,20rem)]">
+
+            {/* Floating Grimoire Button Centered over Altar Stone */}
+            <div className="pointer-events-auto absolute left-1/2 top-[48%] -translate-x-1/2 -translate-y-1/2 h-[min(65vw,22rem)] w-[min(65vw,22rem)] sm:h-[min(22vw,21rem)] sm:w-[min(22vw,21rem)]">
               <motion.button
                 type="button"
                 className="group relative h-full w-full cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505]"
                 onClick={() => setIsBookOpened(true)}
-                animate={{ y: [0, -12, 0], scale: 1 }}
-                whileHover={{ y: 0, scale: 1.1 }}
-                whileFocus={{ y: 0, scale: 1.1 }}
-                transition={{ type: "spring", stiffness: 65, damping: 9, repeat: Infinity, repeatType: "mirror", duration: 3.4 }}
+                animate={{ y: [0, -14, 0] }}
+                whileHover={{ scale: 1.08 }}
+                whileFocus={{ scale: 1.08 }}
+                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
                 aria-label="Open the WAVES gallery grimoire"
               >
                 <Image
@@ -122,15 +127,15 @@ export default function GalleryPage() {
                   alt="An ornate grimoire resting on an altar"
                   fill
                   priority
-                  sizes="(max-width: 640px) 70vw, 448px"
-                  className="translate-x-[7.5%] translate-y-[7.5%] object-contain drop-shadow-[0_24px_24px_rgba(0,0,0,0.6)] transition-opacity duration-300 group-hover:opacity-0 group-focus-visible:opacity-0"
+                  sizes="(max-width: 640px) 65vw, 360px"
+                  className="object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,0.7)] transition-opacity duration-300 group-hover:opacity-0 group-focus-visible:opacity-0"
                 />
                 <Image
                   src="/gallery/book-grimoire_onhover.png"
                   alt=""
                   fill
-                  sizes="(max-width: 640px) 70vw, 448px"
-                  className="object-contain opacity-0 drop-shadow-[0_28px_30px_rgba(180,25,10,0.42)] transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  sizes="(max-width: 640px) 65vw, 360px"
+                  className="object-contain opacity-0 drop-shadow-[0_28px_34px_rgba(200,30,10,0.55)] transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
                 />
               </motion.button>
             </div>
@@ -138,51 +143,56 @@ export default function GalleryPage() {
         ) : (
           <motion.section
             key="open-book"
-            className="relative z-10 flex w-full flex-col items-center justify-center px-0 pb-7 pt-20 sm:pb-8 sm:pt-24"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
+            className="relative z-10 flex w-full flex-col items-center justify-center px-0 pb-6 pt-16 sm:pb-8 sm:pt-20"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
             tabIndex={0}
-            aria-label="Gallery carousel. Use left and right arrow keys to change cards."
+            aria-label="Gallery carousel. Use left and right arrow keys or slider to change cards."
           >
-            <div className="relative h-[min(70svh,34.5rem)] w-full overflow-hidden [perspective:1200px]">
+            {/* 3D Cards Carousel Stage */}
+            <div className="relative h-[min(66svh,33rem)] w-full overflow-hidden [perspective:1200px] flex items-center justify-center">
               <motion.div
-                className="absolute inset-0"
+                className="absolute inset-0 flex items-center justify-center"
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.18}
+                dragElastic={0.2}
                 onDragEnd={handleDragEnd}
                 whileDrag={{ cursor: "grabbing" }}
               >
-                {carouselSlots.map((signedOffset) => {
-                  const index = wrapIndex(activeCard + signedOffset);
-                  const card = cards[index];
+                {visibleSlots.map((signedOffset) => {
+                  const itemIndex = activeIndex + signedOffset;
+                  const cardIdx = ((itemIndex % cards.length) + cards.length) % cards.length;
+                  const card = cards[cardIdx];
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
+
                   const cardScale =
-                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.7;
+                    distance === 0 ? 1 : distance === 1 ? 0.84 : 0.68;
                   const cardOpacity =
-                    distance === 0 ? 1 : distance === 1 ? 0.7 : 0.4;
+                    distance === 0 ? 1 : distance === 1 ? 0.74 : 0.38;
                   const cardZIndex =
                     distance === 0 ? 30 : distance === 1 ? 20 : 10;
 
                   return (
                     <motion.button
-                      key={`${activeCard}-${signedOffset}-${card.src}`}
+                      key={itemIndex}
                       type="button"
-                      className="absolute left-1/2 top-1/2 h-full [transform-style:preserve-3d] w-[clamp(10rem,24vw,23rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing sm:w-[clamp(12rem,24vw,23rem)] md:w-[clamp(14rem,24vw,23rem)]"
+                      className="absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11rem,23vw,21rem)] h-[clamp(17rem,35vw,31rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing"
                       animate={{
-                        x: `calc(${signedOffset} * clamp(8.5rem, 18vw, 21rem))`,
-                        y: distance === 0 ? "0%" : distance === 1 ? "8%" : "16%",
-                        rotateY: signedOffset * -4,
+                        x: `calc(${signedOffset} * clamp(8.5rem, 18vw, 19.5rem))`,
+                        y: "0%",
+                        rotateY: signedOffset * -3.5,
                         scale: cardScale,
                         opacity: cardOpacity,
                         zIndex: cardZIndex,
                       }}
-                      transition={{ type: "spring", stiffness: 260, damping: 27 }}
+                      transition={{ type: "spring", stiffness: 280, damping: 28 }}
                       onClick={() => {
-                        if (!isActive) setActiveCard(index);
+                        if (!isActive) {
+                          setActiveIndex(itemIndex);
+                        }
                       }}
                       aria-label={`${card.alt}${isActive ? ", selected" : ""}`}
                       aria-current={isActive ? "true" : undefined}
@@ -191,8 +201,9 @@ export default function GalleryPage() {
                         src={card.src}
                         alt={card.alt}
                         fill
-                        sizes="(max-width: 640px) 59vw, 352px"
-                        className="object-contain drop-shadow-[0_18px_18px_rgba(0,0,0,0.64)]"
+                        sizes="(max-width: 640px) 60vw, 360px"
+                        className="object-contain drop-shadow-[0_20px_24px_rgba(0,0,0,0.85)]"
+                        priority={isActive}
                       />
                     </motion.button>
                   );
@@ -200,68 +211,73 @@ export default function GalleryPage() {
               </motion.div>
             </div>
 
-            <div className="z-40 mt-8 flex w-[min(72%,52rem)] flex-col items-center gap-2 sm:mt-10 sm:gap-3">
-              <label htmlFor="gallery-card" className="sr-only">
-                Select a gallery card
+            {/* Custom Golden Slider with Pentagram Thumb (matches video at 0:12) */}
+            <div className="z-40 mt-4 sm:mt-6 flex w-[min(88vw,28rem)] sm:w-[min(80vw,32rem)] flex-col items-center">
+              <label htmlFor="gallery-card-slider" className="sr-only">
+                Select gallery card
               </label>
-              <input
-                id="gallery-card"
-                className="gallery-range w-full"
-                type="range"
-                min="0"
-                max={cards.length - 1}
-                step="1"
-                value={activeCard}
-                onChange={(event) => setActiveCard(Number(event.target.value))}
-                aria-valuetext={`Gallery card ${activeCard + 1} of ${cards.length}`}
-              />
+
+              <div className="relative w-full h-8 flex items-center">
+                {/* Background track with golden border */}
+                <div className="relative w-full h-[9px] rounded-full bg-[#180606]/90 border border-[#c89e48]/55 shadow-[inset_0_1px_4px_rgba(0,0,0,0.9),0_0_12px_rgba(0,0,0,0.7)] overflow-hidden">
+                  {/* Glowing progress fill bar */}
+                  <motion.div
+                    className="h-full rounded-full"
+                    animate={{
+                      width: `${(activeCard / (cards.length - 1)) * 100}%`,
+                    }}
+                    transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                    style={{
+                      background: "linear-gradient(90deg, #6e270c 0%, #b8621b 30%, #e5a73e 70%, #f6dc88 100%)",
+                      boxShadow: "0 0 12px rgba(229, 167, 62, 0.75)",
+                    }}
+                  />
+                </div>
+
+                {/* Animated Pentagram Thumb Medallion */}
+                <motion.div
+                  className="absolute top-1/2 pointer-events-none z-20"
+                  animate={{
+                    left: `calc(${(activeCard / (cards.length - 1)) * 100}% - ${(activeCard / (cards.length - 1)) * 36}px)`,
+                    y: "-50%",
+                  }}
+                  transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                  }}
+                >
+                  <Image
+                    src="/gallery/pentagram-thumb.svg"
+                    alt=""
+                    width={36}
+                    height={36}
+                    priority
+                    className="w-full h-full object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] drop-shadow-[0_0_8px_rgba(229,167,62,0.6)]"
+                  />
+                </motion.div>
+
+                {/* Range input for accessible keyboard, click & drag */}
+                <input
+                  id="gallery-card-slider"
+                  type="range"
+                  min="0"
+                  max={cards.length - 1}
+                  step="1"
+                  value={activeCard}
+                  onChange={(e) => {
+                    const targetVal = Number(e.target.value);
+                    const currentCycle = Math.floor(activeIndex / cards.length);
+                    setActiveIndex(currentCycle * cards.length + targetVal);
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-30"
+                  aria-valuetext={`Card ${activeCard + 1} of ${cards.length}: ${cards[activeCard].alt}`}
+                />
+              </div>
             </div>
           </motion.section>
         )}
       </AnimatePresence>
-
-      <style jsx global>{`
-        .gallery-book-anchor, .gallery-book-glow { left: max(58.5%, calc(50% + 13.05vh)); top: 48.5%; }
-        @media (max-width: 639px) {
-          .gallery-book-anchor, .gallery-book-glow { left: 50%; top: 46%; }
-        }
-        .gallery-range {
-          height: 1.5rem;
-          appearance: none;
-          background: transparent;
-          cursor: pointer;
-        }
-        .gallery-range::-webkit-slider-runnable-track {
-          height: 2px;
-          border-radius: 999px;
-          background: rgba(242, 217, 166, 0.36);
-        }
-        .gallery-range::-moz-range-track {
-          height: 2px;
-          border-radius: 999px;
-          background: rgba(242, 217, 166, 0.36);
-        }
-        .gallery-range::-webkit-slider-thumb {
-          width: 1.45rem;
-          height: 1.45rem;
-          margin-top: -0.6rem;
-          appearance: none;
-          border: 0;
-          background: url("/gallery/pentagram-thumb.svg") center / contain no-repeat;
-        }
-        .gallery-range::-moz-range-thumb {
-          width: 1.45rem;
-          height: 1.45rem;
-          border: 0;
-          border-radius: 0;
-          background: url("/gallery/pentagram-thumb.svg") center / contain no-repeat;
-        }
-        .gallery-range:focus-visible {
-          outline: 2px solid #f8e8c6;
-          outline-offset: 5px;
-          border-radius: 999px;
-        }
-      `}</style>
     </main>
   );
 }

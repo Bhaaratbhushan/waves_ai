@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 
 // Both settings carried over from the registration-page app, which hit the same problems.
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Root detection walks up looking for a lockfile and finds a stray
   // package-lock.json in the home directory, which it then warns about on
   // every dev start and build. Pin the root to this app instead.

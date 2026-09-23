@@ -59,13 +59,25 @@ export default function Navbar() {
         
         {/* Top Left: Waves Logo → links to home (hidden on home page) */}
         {!isHome && (
-          <Link href="/home" className="absolute top-[-10px] left-[-10px] md:top-[-40px] md:left-[-30px] pointer-events-auto z-50">
+          <Link 
+            href="/" 
+            className={`absolute pointer-events-auto z-50 transition-all ${
+              isGallery 
+                ? "top-[10px] left-[14px] md:top-[16px] md:left-[28px]" 
+                : "top-[-10px] left-[-10px] md:top-[-40px] md:left-[-30px]"
+            }`}
+          >
             <Image 
-              src="/navbar/waves-logo.png" 
+              src={isGallery ? "/gallery/waves-logo.svg" : "/navbar/waves-logo.png"} 
               alt="Waves Logo" 
               width={319} 
               height={128} 
-              className="w-[180px] md:w-[319px] h-auto object-contain transition-all" 
+              className={
+                isGallery 
+                  ? "w-[150px] sm:w-[190px] md:w-[240px] h-auto object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]" 
+                  : "w-[180px] md:w-[319px] h-auto object-contain transition-all"
+              } 
+              priority
               suppressHydrationWarning
             />
           </Link>
@@ -76,8 +88,10 @@ export default function Navbar() {
           {navItems.map((item) => (
             <Link
               key={item}
-              href={`/${item.toLowerCase().trim()}`}
-              className={`text-[clamp(16px,2.7vw,35px)] text-[#5C2E0E] leading-normal transition-all duration-200 ease-out hover:scale-125 hover:drop-shadow-lg${isActive(item) ? " navbar-link--active" : ""}`}
+              href={item === "Home" ? "/" : `/${item.toLowerCase().trim()}`}
+              className={`text-[clamp(16px,2.7vw,35px)] leading-normal transition-all duration-200 ease-out hover:scale-125 hover:drop-shadow-lg ${
+                isGallery ? "text-[#edd5a4] hover:text-white" : "text-[#5C2E0E]"
+              }${isActive(item) ? " navbar-link--active" : ""}`}
               style={{
                 fontFamily: "'Yasharth', sans-serif",
               }}
@@ -89,7 +103,7 @@ export default function Navbar() {
 
         {/* Hamburger Button - Mobile only */}
         <button
-          className="navbar-hamburger pointer-events-auto z-50"
+          className={`navbar-hamburger pointer-events-auto z-50${isGallery ? " navbar-hamburger--dark" : ""}`}
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           aria-expanded={mobileMenuOpen}
           aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
@@ -101,12 +115,12 @@ export default function Navbar() {
 
         {/* Mobile Dropdown Menu */}
         <div
-          className={`navbar-mobile-menu pointer-events-auto z-50${mobileMenuOpen ? " navbar-mobile-menu--open" : ""}`}
+          className={`navbar-mobile-menu pointer-events-auto z-50${isGallery ? " navbar-mobile-menu--dark" : ""}${mobileMenuOpen ? " navbar-mobile-menu--open" : ""}`}
         >
           {navItems.map((item) => (
             <Link
               key={item}
-              href={`/${item.toLowerCase().trim()}`}
+              href={item === "Home" ? "/" : `/${item.toLowerCase().trim()}`}
               className={`navbar-mobile-menu__link${isActive(item) ? " navbar-mobile-menu__link--active" : ""}`}
               style={{ fontFamily: "'Yasharth', sans-serif" }}
               onClick={() => setMobileMenuOpen(false)}

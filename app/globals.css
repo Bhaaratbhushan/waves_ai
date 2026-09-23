@@ -36,9 +36,10 @@ body {
 /* ── Navbar: active page glow indicator (matches Figma NavButton Variant2) ── */
 
 .navbar-link--active {
-  text-shadow: 0 0 2px rgba(205, 205, 205, 1),
-               0 0 4px rgba(205, 205, 205, 0.6),
-               0 0 6px rgba(205, 205, 205, 0.3);
+  text-shadow: 0 0 2px rgba(255, 235, 190, 1),
+               0 0 8px rgba(255, 215, 140, 0.8),
+               0 0 16px rgba(240, 180, 80, 0.6);
+  color: #fff9e6 !important;
 }
 
 /* ── Lamp crossfade slideshow (pure CSS, no JS) ─────────────────────── */
@@ -180,8 +181,35 @@ body {
 
   .navbar-mobile-menu__link--active {
     background: transparent;
-    text-shadow: 0 0 2px rgba(205, 205, 205, 1),
-                 0 0 4px rgba(205, 205, 205, 0.6),
-                 0 0 6px rgba(205, 205, 205, 0.3);
+    text-shadow: 0 0 2px rgba(255, 235, 190, 1),
+                 0 0 8px rgba(255, 215, 140, 0.8),
+                 0 0 16px rgba(240, 180, 80, 0.6);
+    color: #fff9e6 !important;
+  }
+
+  .navbar-hamburger--dark .navbar-hamburger__bar {
+    background: #edd5a4;
+  }
+  .navbar-hamburger--dark:hover .navbar-hamburger__bar {
+    background: #fff0d0;
+  }
+
+  .navbar-mobile-menu--dark {
+    background: rgba(22, 5, 5, 0.94) !important;
+    border-color: rgba(212, 175, 55, 0.3) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  .navbar-mobile-menu--dark .navbar-mobile-menu__link {
+    color: #edd5a4;
+  }
+
+  .navbar-mobile-menu--dark .navbar-mobile-menu__link:hover {
+    background: rgba(212, 175, 55, 0.12);
+    color: #ffffff;
+  }
+
+  .navbar-mobile-menu--dark .navbar-mobile-menu__link + .navbar-mobile-menu__link {
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
   }
 }

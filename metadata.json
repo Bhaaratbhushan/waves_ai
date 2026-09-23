@@ -1,0 +1,6 @@
+{
+  "name": "Waves 2026",
+  "description": "Waves 2026 cultural festival web portal — Ashes to Ascension",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
