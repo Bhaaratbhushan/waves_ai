@@ -5,7 +5,7 @@ import {
   AnimatePresence,
   motion,
 } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const cards = [
   {
@@ -33,6 +33,11 @@ export default function GalleryPage() {
   const [activeIndex, setActiveIndex] = useState(30);
   const [hasIntroAnimated, setHasIntroAnimated] = useState(false);
 
+  // Robust pointer drag vs tap tracking
+  const isDraggingRef = useRef(false);
+  const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const lastJumpTimeRef = useRef(0);
+
   const activeCard = ((activeIndex % cards.length) + cards.length) % cards.length;
 
   const openBook = useCallback(() => {
@@ -43,6 +48,49 @@ export default function GalleryPage() {
 
   const changeCard = useCallback((direction: number) => {
     setActiveIndex((current) => current + direction);
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+    isDraggingRef.current = false;
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!pointerStartRef.current) return;
+    const dist = Math.hypot(
+      e.clientX - pointerStartRef.current.x,
+      e.clientY - pointerStartRef.current.y,
+    );
+    if (dist > 12) {
+      isDraggingRef.current = true;
+    }
+  }, []);
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!pointerStartRef.current) return;
+      const dx = e.clientX - pointerStartRef.current.x;
+      const dy = e.clientY - pointerStartRef.current.y;
+
+      // Horizontal swipe detection (> 38px)
+      if (Math.abs(dx) > 38 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+        changeCard(dx < 0 ? 1 : -1);
+      }
+
+      setTimeout(() => {
+        isDraggingRef.current = false;
+        pointerStartRef.current = null;
+      }, 60);
+    },
+    [changeCard],
+  );
+
+  const handleCardClick = useCallback((targetIndex: number) => {
+    if (isDraggingRef.current) return;
+    const now = Date.now();
+    if (now - lastJumpTimeRef.current < 200) return;
+    lastJumpTimeRef.current = now;
+    setActiveIndex(targetIndex);
   }, []);
 
   const handleOpenBookIntro = useCallback(() => {
@@ -173,25 +221,25 @@ export default function GalleryPage() {
             aria-label="Gallery carousel. Use left and right arrow keys, click any card, or use the slider to change cards."
           >
             {/* 3D Cards Carousel Stage:
-                - Gracefully proportioned center card commanding attention without overlapping slider
-                - Smooth click-to-jump on all cards (unlocked from drag capture)
+                - Grand, prominent center card commanding the screen (scale 1.25)
                 - Inward 3D tilt, z-translation, and firelight illumination
-                - Clear spacing between cards and half-hidden outer cards
+                - Guaranteed tap/click navigation to bring clicked card to center
+                - Slider placed downward with generous clearance from the cards
             */}
-            <div className="relative h-[min(62svh,29rem)] sm:h-[min(64svh,30rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center select-none">
+            <div 
+              className="relative h-[min(68svh,36rem)] sm:h-[min(70svh,38rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center select-none"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+            >
               {/* Soft atmospheric firelight glow behind center card with smooth radial falloff */}
               <div 
-                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[20%] w-[min(80vw,30rem)] h-28 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(225,120,30,0.18)_0%,rgba(180,60,15,0.05)_50%,transparent_75%)] blur-2xl z-0"
+                className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[20%] w-[min(88vw,34rem)] h-32 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(225,120,30,0.18)_0%,rgba(180,60,15,0.06)_50%,transparent_75%)] blur-2xl z-0"
                 aria-hidden="true"
               />
 
               <motion.div
                 className="absolute inset-0 flex items-center justify-center [transform-style:preserve-3d]"
-                onPanEnd={(_event, info) => {
-                  if (Math.abs(info.offset.x) > 35 || Math.abs(info.velocity.x) > 250) {
-                    changeCard(info.offset.x < 0 ? 1 : -1);
-                  }
-                }}
               >
                 {visibleSlots.map((signedOffset) => {
                   const itemIndex = activeIndex + signedOffset;
@@ -200,36 +248,32 @@ export default function GalleryPage() {
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
 
-                  // Refined 3D Scale & Depth hierarchy:
-                  // Center card: scale 1.10, z: 55px (stays prominent center of attraction without crossing slider)
-                  // Adjacent cards (-1, +1): scale 0.85, z: -40px, rotateY ±7deg
-                  // Outer cards (-2, +2): scale 0.68, z: -110px, rotateY ±12deg
+                  // 3D Scale & Depth hierarchy matching original grand presentation:
+                  // Center card: scale 1.25, z: 80px (commanding, pulled forward)
+                  // Adjacent cards (-1, +1): scale 0.80, z: -50px, rotateY ±8deg
+                  // Outer cards (-2, +2): scale 0.62, z: -140px, rotateY ±13deg
                   const cardScale =
-                    distance === 0 ? 1.10 : distance === 1 ? 0.85 : 0.68;
+                    distance === 0 ? 1.25 : distance === 1 ? 0.80 : 0.62;
                   const cardZ =
-                    distance === 0 ? 55 : distance === 1 ? -40 : -110;
+                    distance === 0 ? 80 : distance === 1 ? -50 : -140;
                   const cardRotateY =
-                    distance === 0 ? 0 : signedOffset * -7;
+                    distance === 0 ? 0 : signedOffset * -8;
                   const cardOpacity =
-                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.60;
+                    distance === 0 ? 1 : distance === 1 ? 0.82 : 0.58;
                   const cardZIndex =
                     distance === 0 ? 30 : distance === 1 ? 20 : 10;
                   const cardBrightness =
                     distance === 0
-                      ? "brightness(1.05) contrast(1.03)"
+                      ? "brightness(1.06) contrast(1.04)"
                       : distance === 1
-                      ? "brightness(0.82) contrast(1.01)"
-                      : "brightness(0.60) blur(0.5px)";
+                      ? "brightness(0.78) contrast(1.02)"
+                      : "brightness(0.55) blur(0.5px)";
 
                   return (
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(10.5rem,48vw,14.5rem)] sm:w-[clamp(11rem,18.5vw,17rem)] h-[clamp(15.5rem,72vw,22rem)] sm:h-[clamp(16.5rem,28vw,25.5rem)] -translate-x-1/2 -translate-y-1/2 ${
-                        isActive
-                          ? "cursor-default"
-                          : "cursor-pointer hover:brightness-110"
-                      } touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
+                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11.5rem,54vw,17rem)] sm:w-[clamp(12.5rem,21.5vw,21rem)] h-[clamp(17.5rem,82vw,26rem)] sm:h-[clamp(19.5rem,34.5vw,33.5rem)] -translate-x-1/2 -translate-y-1/2 cursor-pointer touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] ${
                         distance >= 2 ? "gallery-card-outer" : ""
                       }`}
                       animate={{
@@ -245,7 +289,7 @@ export default function GalleryPage() {
                       whileHover={
                         !isActive
                           ? { scale: cardScale * 1.05, y: -6, filter: "brightness(0.95)" }
-                          : { scale: 1.12 }
+                          : { scale: 1.27 }
                       }
                       transition={
                         isActive
@@ -260,11 +304,13 @@ export default function GalleryPage() {
                             }
                           : { type: "spring", stiffness: 280, damping: 28 }
                       }
+                      onPointerUp={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(itemIndex);
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!isActive) {
-                          setActiveIndex(itemIndex);
-                        }
+                        handleCardClick(itemIndex);
                       }}
                       aria-label={`${card.alt}${isActive ? ", selected" : ", click to jump to this card"}`}
                       aria-current={isActive ? "true" : undefined}
@@ -273,11 +319,11 @@ export default function GalleryPage() {
                         src={card.src}
                         alt={card.alt}
                         fill
-                        sizes="(max-width: 640px) 55vw, 380px"
+                        sizes="(max-width: 640px) 60vw, 420px"
                         className={`object-contain transition-all duration-300 pointer-events-none ${
                           isActive
-                            ? "drop-shadow-[0_12px_22px_rgba(0,0,0,0.55)] drop-shadow-[0_0_24px_rgba(235,130,35,0.22)]"
-                            : "drop-shadow-[0_8px_16px_rgba(0,0,0,0.45)]"
+                            ? "drop-shadow-[0_16px_28px_rgba(0,0,0,0.65)] drop-shadow-[0_0_28px_rgba(235,130,35,0.28)]"
+                            : "drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)]"
                         }`}
                         priority={isActive}
                       />
@@ -287,8 +333,8 @@ export default function GalleryPage() {
               </motion.div>
             </div>
 
-            {/* Custom Golden Slider with Pentagram Thumb (clear space below center card) */}
-            <div className="z-40 mt-6 sm:mt-8 flex w-[min(90vw,36rem)] sm:w-[min(82vw,44rem)] flex-col items-center">
+            {/* Custom Golden Slider with Pentagram Thumb (placed downward so it never overlaps cards) */}
+            <div className="z-40 mt-10 sm:mt-14 mb-2 flex w-[min(90vw,36rem)] sm:w-[min(82vw,46rem)] flex-col items-center">
               <label htmlFor="gallery-card-slider" className="sr-only">
                 Select gallery card
               </label>
@@ -357,7 +403,7 @@ export default function GalleryPage() {
 
       <style jsx global>{`
         :root {
-          --gallery-card-spacing: clamp(14rem, 25.5vw, 25rem);
+          --gallery-card-spacing: clamp(14rem, 26vw, 26rem);
         }
         @media (max-width: 639px) {
           :root {
