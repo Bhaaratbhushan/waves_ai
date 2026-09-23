@@ -1,0 +1,393 @@
+/*
+ * The Events page is laid out on the Figma frame (1728 x 1117).
+ * --u is one Figma pixel on screen: the frame is scaled to fit the viewport and centered,
+ * so every position below is written as (figma px) * var(--u).
+ */
+
+.page {
+  --u: min(calc(100vw / 1728), calc(100dvh / 1117));
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ink: #1d1512;
+  /* frame height, and where a selected card lands (center x, center y, scale) */
+  --fh: 1117;
+  --tcx: 864;
+  --tcy: 563.5;
+  --ts: 1.3406;
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #141013;
+  isolation: isolate;
+}
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+.bg img {
+  object-fit: cover;
+}
+
+.frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(1728 * var(--u));
+  height: calc(1117 * var(--u));
+  translate: -50% -50%;
+}
+
+.title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- event cards ---------- */
+
+.card {
+  --cx: var(--x);
+  --cy: var(--y);
+  position: absolute;
+  left: calc(var(--cx) * var(--u));
+  top: calc(var(--cy) * var(--u));
+  width: calc(276 * var(--u));
+  height: calc(443 * var(--u));
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transform-origin: 50% 50%;
+  transition:
+    transform 800ms var(--ease-out),
+    opacity 500ms ease;
+  /* closing: wait for the details to fold away, then return in order */
+  transition-delay: calc(180ms + var(--i) * 70ms);
+}
+
+.card:focus-visible {
+  outline: none;
+}
+
+.rise {
+  position: absolute;
+  inset: 0;
+  animation: rise 1200ms var(--ease-out) both;
+  animation-delay: calc(250ms + var(--i) * 170ms);
+}
+
+/* cards travel up from below the frame, one after another (Figma Events frames 1 to 5) */
+@keyframes rise {
+  from {
+    transform: translateY(calc((var(--fh) + 33 - var(--cy)) * var(--u)));
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.lift {
+  position: absolute;
+  inset: 0;
+  transition: transform 450ms var(--ease-out);
+}
+
+.art {
+  position: absolute;
+  inset: calc(var(--pad) * var(--u) * -1);
+}
+
+.art img {
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* hover variant from the Figma component: a soft white halo around the card */
+.glow {
+  position: absolute;
+  inset: calc(var(--pad) * var(--u) * -1);
+  opacity: 0;
+  filter: brightness(0) invert(1) blur(calc(22 * var(--u)));
+  transition: opacity 450ms var(--ease-out);
+  pointer-events: none;
+}
+
+.glow img {
+  object-fit: fill;
+}
+
+@media (hover: hover) {
+  .stage:not([data-open]) .card:hover .lift {
+    transform: translateY(calc(-10 * var(--u)));
+  }
+
+  .stage:not([data-open]) .card:hover .glow {
+    opacity: 0.7;
+  }
+}
+
+.card:focus-visible .lift {
+  transform: translateY(calc(-10 * var(--u)));
+}
+
+.card:focus-visible .glow {
+  opacity: 0.8;
+}
+
+/* ---------- selected event (Figma OneEvent frames) ---------- */
+
+/* the chosen card moves to (--tcx, --tcy) and grows to 370 x 595 */
+.stage[data-open] .card[data-selected] {
+  z-index: 3;
+  transform: translate(
+      calc((var(--tcx) - 138 - var(--cx)) * var(--u)),
+      calc((var(--tcy) - 221.5 - var(--cy)) * var(--u))
+    )
+    scale(var(--ts));
+  transition-delay: 90ms;
+}
+
+.stage[data-open] .card:not([data-selected]) {
+  opacity: 0;
+  transform: translateY(calc(48 * var(--u))) scale(0.94);
+  pointer-events: none;
+  transition-duration: 420ms;
+  transition-delay: calc(var(--i) * 30ms);
+}
+
+/* ---------- details and description cards ---------- */
+
+.detail {
+  --dy: 281;
+  --fy: 0;
+  --ds: 1;
+  position: absolute;
+  top: calc(var(--dy) * var(--u));
+  left: calc(var(--dx) * var(--u));
+  width: calc(346 * var(--u));
+  height: calc(561 * var(--u));
+  z-index: 1;
+  opacity: 0;
+  transform: translate(calc(var(--fx) * var(--u)), calc(var(--fy) * var(--u)))
+    scale(calc(var(--ds) * 0.8));
+  pointer-events: none;
+  transition:
+    transform 380ms var(--ease-in-out),
+    opacity 260ms ease;
+}
+
+.stage[data-open] .detail {
+  opacity: 1;
+  transform: scale(var(--ds));
+  pointer-events: auto;
+  transition:
+    transform 850ms var(--ease-out),
+    opacity 500ms ease;
+  transition-delay: 420ms;
+}
+
+.detailLeft {
+  --dx: 229;
+  --fx: 462;
+}
+
+.detailRight {
+  --dx: 1147;
+  --fx: -456;
+}
+
+.detailArt {
+  position: absolute;
+  inset: calc(-14 * var(--u));
+}
+
+.detailArt img {
+  object-fit: fill;
+}
+
+.photo {
+  position: absolute;
+  left: calc(70 * var(--u));
+  width: calc(206 * var(--u));
+  height: calc(137 * var(--u));
+  overflow: hidden;
+  border-radius: calc(22 * var(--u));
+  background: #2a2230;
+}
+
+.photo img {
+  object-fit: cover;
+}
+
+.detailLeft .photo {
+  top: calc(90 * var(--u));
+}
+
+.detailRight .photo {
+  top: calc(363 * var(--u));
+}
+
+.facts {
+  position: absolute;
+  left: calc(56 * var(--u));
+  top: calc(229 * var(--u));
+  margin: 0;
+  color: var(--ink);
+  font-size: max(calc(26 * var(--u)), 14px);
+  line-height: max(calc(42 * var(--u)), 22px);
+  letter-spacing: 0.01em;
+}
+
+.facts div {
+  display: flex;
+  gap: 0.35em;
+}
+
+.facts dt::after {
+  content: " :";
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.description {
+  position: absolute;
+  left: calc(70 * var(--u));
+  top: calc(75 * var(--u));
+  width: calc(212 * var(--u));
+  max-height: calc(280 * var(--u));
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: max(calc(15.5 * var(--u)), 11px);
+  line-height: max(calc(24 * var(--u)), 16px);
+  text-wrap: pretty;
+}
+
+.close {
+  position: absolute;
+  left: 50%;
+  top: calc(900 * var(--u));
+  z-index: 4;
+  translate: -50% 0;
+  padding: 0.4em 1em;
+  border: 1px solid #c9a15e;
+  border-radius: 999px;
+  background: #1d1512;
+  color: #e3c07f;
+  font-size: max(calc(22 * var(--u)), 14px);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.close:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  outline: 2px solid #e3c07f;
+  outline-offset: 3px;
+}
+
+/* ---------- reduced motion: keep the state changes, drop the travel ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rise {
+    animation-name: fade;
+    animation-duration: 400ms;
+    animation-delay: 0ms;
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  .card,
+  .detail,
+  .stage[data-open] .detail,
+  .lift {
+    transition-duration: 200ms;
+    transition-delay: 0ms;
+  }
+
+  .stage[data-open] .card[data-selected] {
+    transition-delay: 0ms;
+  }
+
+  .detail {
+    transform: scale(var(--ds));
+  }
+}
+
+/* ---------- phones and portrait tablets ----------
+ * A 660-wide frame: cards in a staggered 2x2 grid that fills the screen.
+ * An opened event stacks vertically (card, then details, then description) and the page scrolls.
+ * svh keeps --u stable while the mobile address bar shows and hides.
+ */
+
+@media (max-width: 767px), (orientation: portrait) and (max-width: 1100px) {
+  .page {
+    --u: min(calc(100vw / 660), calc(100svh / 1250));
+    --fh: 1250;
+    --tcx: 330;
+    --tcy: 447.5;
+  }
+
+  .frame {
+    position: relative;
+    left: auto;
+    top: auto;
+    translate: none;
+    width: calc(660 * var(--u));
+    height: calc(var(--fh) * var(--u));
+    margin: max(0px, calc((100svh - 1250 * var(--u)) / 2)) auto 0;
+  }
+
+  .stage[data-open] {
+    --fh: 2574;
+  }
+
+  .card {
+    --cx: var(--mx);
+    --cy: var(--my);
+  }
+
+  .detail {
+    --dx: 157;
+    --ds: 1.5;
+    transform-origin: 50% 0;
+  }
+
+  .detailLeft {
+    --dy: 790;
+    --fx: 0;
+    --fy: -420;
+  }
+
+  .detailRight {
+    --dy: 1672;
+    --fx: 0;
+    --fy: -1250;
+  }
+
+  .close {
+    top: calc(2480 * var(--u));
+  }
+}

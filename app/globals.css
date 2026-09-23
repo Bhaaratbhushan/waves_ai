@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Yasharth';
+  src: url('/font/Yasharth.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-yasharth);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Navbar: active page glow indicator (matches Figma NavButton Variant2) ── */
+
+.navbar-link--active {
+  text-shadow: 0 0 2px rgba(205, 205, 205, 1),
+               0 0 4px rgba(205, 205, 205, 0.6),
+               0 0 6px rgba(205, 205, 205, 0.3);
+}
+
+/* ── Lamp crossfade slideshow (pure CSS, no JS) ─────────────────────── */
+
+@keyframes lamp-crossfade {
+  0%      { opacity: 0; }
+  8.33%   { opacity: 1; }   /* fade in  (0% → 8.33% = 1s)  */
+  33.33%  { opacity: 1; }   /* hold     (8.33% → 33.33%)    */
+  41.67%  { opacity: 0; }   /* fade out (33.33% → 41.67%)   */
+  100%    { opacity: 0; }   /* stay hidden rest of cycle     */
+}
+
+.lamp-crossfade {
+  /* No animation by default */
+  transition: opacity 0.3s ease;
+}
+
+/* Default state when not animating */
+.lamp-crossfade--1 { opacity: 1; }
+.lamp-crossfade--2 { opacity: 0; }
+.lamp-crossfade--3 { opacity: 0; }
+
+/* Apply animation only when hovering over the container */
+.lamp-container:hover .lamp-crossfade {
+  animation: lamp-crossfade 3s ease-in-out infinite;
+}
+
+/* Maintain staggering when animating */
+.lamp-container:hover .lamp-crossfade--1 { animation-delay: 0s; opacity: 0; }
+.lamp-container:hover .lamp-crossfade--2 { animation-delay: 1s; }
+.lamp-container:hover .lamp-crossfade--3 { animation-delay: 2s; }
+
+/* ── Navbar: hamburger + mobile menu (hidden by default) ────────────── */
+
+.navbar-hamburger {
+  display: none;
+}
+
+.navbar-mobile-menu {
+  display: none;
+}
+
+/* ── Mobile breakpoint ──────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Hide desktop nav links */
+  .navbar-links-desktop {
+    display: none !important;
+  }
+
+  /* Show hamburger */
+  .navbar-hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 60;
+    width: 38px;
+    height: 38px;
+    padding: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .navbar-hamburger:hover .navbar-hamburger__bar {
+    background: #3a1a06;
+  }
+
+  .navbar-hamburger__bar {
+    display: block;
+    width: 100%;
+    height: 3.5px;
+    background: #5C2E0E;
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s ease;
+    transform-origin: center;
+  }
+
+  /* Animate bars into an ✕ when open */
+  .navbar-hamburger__bar.open:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+  }
+  .navbar-hamburger__bar.open:nth-child(2) {
+    opacity: 0;
+  }
+  .navbar-hamburger__bar.open:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+  }
+
+  /* Mobile dropdown overlay */
+  .navbar-mobile-menu {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 64px;
+    right: 16px;
+    width: 220px;
+    background: transparent;
+    backdrop-filter: blur(12px);
+    border: 1.5px solid rgba(92, 46, 14, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease;
+    z-index: 59;
+  }
+
+  .navbar-mobile-menu--open {
+    max-height: 500px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .navbar-mobile-menu__link {
+    display: block;
+    padding: 14px 20px;
+    font-size: 22px;
+    text-align: center;
+    color: #5C2E0E;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .navbar-mobile-menu__link:hover {
+    background: rgba(92, 46, 14, 0.08);
+  }
+
+  .navbar-mobile-menu__link + .navbar-mobile-menu__link {
+    border-top: 1px solid rgba(92, 46, 14, 0.1);
+  }
+
+  .navbar-mobile-menu__link--active {
+    background: transparent;
+    text-shadow: 0 0 2px rgba(205, 205, 205, 1),
+                 0 0 4px rgba(205, 205, 205, 0.6),
+                 0 0 6px rgba(205, 205, 205, 0.3);
+  }
+}

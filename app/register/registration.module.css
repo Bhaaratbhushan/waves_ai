@@ -1,0 +1,451 @@
+/*
+ * WAVES '26 registration.
+ *
+ * The design is a fixed 1440x1024 composition whose chrome (ornate frame,
+ * painted background, logo) is a single raster plate. Every coordinate below
+ * is taken from that canvas: percentages position elements against the plate,
+ * and `--px` converts a canvas pixel into a container-relative unit so type
+ * and borders scale with the stage instead of drifting off the artwork.
+ *
+ * Under 820px the frame can no longer hold a two-column form, so the layout
+ * drops the plate and reflows. See the media query at the end.
+ */
+
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #05070a;
+  padding: 0;
+}
+
+.stage {
+  --px: 0.06944cqw; /* 1 canvas px, given a 1440-wide canvas */
+  position: relative;
+  width: 100%;
+  max-width: 1440px;
+  aspect-ratio: 1440 / 1024;
+  container-type: inline-size;
+  overflow: hidden;
+  font-family: var(--font-display), "Times New Roman", Times, serif;
+}
+
+/* ---------------------------------------------------------------- themes */
+
+.individual {
+  --title: #c9a173;
+  --label: #c18f57;
+  --field-bg: #ffffff;
+  --field-border: #c18f57;
+  --field-text: #2a2118;
+  --field-placeholder: #777777;
+  --field-radius: calc(10 * var(--px));
+  --field-border-w: calc(2 * var(--px));
+  --field-h: calc(54 * var(--px));
+  --focus-ring: rgba(193, 143, 87, 0.55);
+  --chip-art: url("/waves/chip-gold.png");
+  --chip-text: #f4e7d2;
+  --chip-edge: rgba(193, 143, 87, 0.9);
+  --submit-top: 94.24%;
+}
+
+.team {
+  --title: #646566;
+  --label: #ffffff;
+  --field-bg: #373737;
+  --field-border: #662020;
+  --field-text: #ececec;
+  --field-placeholder: #777777;
+  --field-radius: calc(2 * var(--px));
+  --field-border-w: calc(1 * var(--px));
+  --field-h: calc(49 * var(--px));
+  --focus-ring: rgba(190, 46, 46, 0.6);
+  --chip-art: url("/waves/chip-dark.png");
+  --chip-text: #ffffff;
+  --chip-edge: rgba(140, 40, 40, 0.9);
+  --submit-top: 88.38%;
+}
+
+/* ------------------------------------------------------------ the plate */
+
+.plate {
+  object-fit: cover;
+  object-position: center;
+  opacity: 0;
+  transition: opacity 420ms ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+.plateOn {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------- headline */
+
+.title {
+  position: absolute;
+  margin: 0;
+  color: var(--title);
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.individual .title {
+  left: 27.36%;
+  top: 42.6%;
+  font-size: calc(55 * var(--px));
+}
+
+.team .title {
+  left: 23.82%;
+  top: 40.1%;
+  font-size: calc(53 * var(--px));
+}
+
+/* --------------------------------------------------- individual/team chip */
+
+.chip {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--chip-text);
+  font-family: inherit;
+  font-size: calc(20 * var(--px));
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  background-image: var(--chip-art);
+  background-size: 100% 100%;
+  border: calc(1 * var(--px)) solid var(--chip-edge);
+  border-radius: calc(3 * var(--px));
+  text-shadow: 0 calc(1 * var(--px)) calc(3 * var(--px)) rgba(0, 0, 0, 0.85);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.chip:hover {
+  filter: brightness(1.22);
+}
+
+.chip:active {
+  transform: translateY(calc(1 * var(--px)));
+  box-shadow: var(--press-shadow);
+}
+
+.individual .chip {
+  left: 66.53%;
+  top: 43.46%;
+  width: 10.42%;
+  height: 4.59%;
+}
+
+.team .chip {
+  left: 67.08%;
+  top: 40.82%;
+  width: 10.35%;
+  height: 4.69%;
+}
+
+/* ----------------------------------------------------------------- grid */
+
+.grid {
+  position: absolute;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+}
+
+.individual .grid {
+  left: 27.15%;
+  top: 50.68%;
+  width: 46.81%;
+  column-gap: 12.46%;
+  row-gap: calc(21 * var(--px));
+}
+
+.team .grid {
+  left: 23.75%;
+  top: 48.25%;
+  width: 52.85%;
+  column-gap: 8.8%;
+  row-gap: calc(21 * var(--px));
+}
+
+/* A row where two controls share one column (City / State). */
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 10.5%;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.label {
+  color: var(--label);
+  font-size: calc(22 * var(--px));
+  line-height: 1.05;
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+.control {
+  width: 100%;
+  height: var(--field-h);
+  min-width: 0;
+  padding: 0 calc(12 * var(--px));
+  color: var(--field-text);
+  font-family: inherit;
+  font-size: calc(22 * var(--px));
+  line-height: 1;
+  background: var(--field-bg);
+  border: var(--field-border-w) solid var(--field-border);
+  border-radius: var(--field-radius);
+  outline: none;
+  transition: box-shadow 140ms ease;
+}
+
+.control::placeholder {
+  color: var(--field-placeholder);
+  opacity: 1;
+}
+
+.control:focus-visible {
+  box-shadow: 0 0 0 calc(3 * var(--px)) var(--focus-ring);
+}
+
+/* Native select arrows clash with the artwork; draw our own. */
+select.control {
+  appearance: none;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right calc(20 * var(--px)) center,
+    right calc(13 * var(--px)) center;
+  background-size: calc(7 * var(--px)) calc(7 * var(--px));
+  background-repeat: no-repeat;
+  background-color: var(--field-bg);
+}
+
+/* --------------------------------------------------------------- submit */
+
+.submit {
+  position: absolute;
+  left: 50%;
+  top: var(--submit-top);
+  transform: translateX(-50%);
+  width: 15.3%;
+  height: 4.4%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--chip-text);
+  font-family: inherit;
+  font-size: calc(22 * var(--px));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background-image: var(--chip-art);
+  background-size: 100% 100%;
+  border: calc(1 * var(--px)) solid var(--chip-edge);
+  border-radius: calc(4 * var(--px));
+  text-shadow: 0 calc(1 * var(--px)) calc(3 * var(--px)) rgba(0, 0, 0, 0.85);
+  transition: filter 160ms ease, transform 160ms ease;
+}
+
+.submit:hover {
+  filter: brightness(1.25);
+}
+
+.submit:active {
+  transform: translateX(-50%) translateY(calc(1 * var(--px)));
+  box-shadow: var(--press-shadow);
+}
+
+.back {
+  position: absolute;
+  left: 3%;
+  top: 4.4%;
+  padding: calc(7 * var(--px)) calc(18 * var(--px));
+  color: var(--chip-text);
+  font-family: inherit;
+  font-size: calc(19 * var(--px));
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  background: rgba(12, 10, 8, 0.42);
+  border: calc(1 * var(--px)) solid var(--chip-edge);
+  border-radius: calc(4 * var(--px));
+  backdrop-filter: blur(3px);
+  text-shadow: 0 calc(1 * var(--px)) calc(3 * var(--px)) rgba(0, 0, 0, 0.85);
+  transition: background-color 160ms ease;
+}
+
+.back::before {
+  content: "← ";
+}
+
+.back:hover {
+  background: rgba(12, 10, 8, 0.62);
+}
+
+.back:active {
+  box-shadow: var(--press-shadow);
+}
+
+.chip:focus-visible,
+.submit:focus-visible,
+.back:focus-visible {
+  outline: calc(2 * var(--px)) solid var(--chip-text);
+  outline-offset: calc(2 * var(--px));
+}
+
+/* ------------------------------------------------------------- compact */
+
+/*
+ * The ornate frame is a fixed raster and cannot reflow, so narrow viewports
+ * get the painted background plus a plain themed card instead.
+ *
+ * Child selectors are qualified with `.stage` so they match the specificity of
+ * the `.individual x` / `.team x` rules above; a bare `.grid` would lose to
+ * `.team .grid` and keep the desktop percentage widths.
+ */
+@media (max-width: 820px) {
+  /*
+   * The theme custom properties live on `.stage` because they depend on its
+   * `--px`, so the wrapper reaches the matching artwork through `:has()`
+   * rather than an inherited variable.
+   */
+  .wrap {
+    padding: 24px 16px 40px;
+    place-items: start center;
+    background-color: #05070a;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  /* `cover` crops hard at phone widths, so a scrim keeps the card legible
+     over whatever part of the painting happens to land behind it. */
+  .wrap:has(.individual) {
+    background-image: linear-gradient(
+        rgba(250, 249, 245, 0.5),
+        rgba(250, 249, 245, 0.5)
+      ),
+      url("/waves/stage-individual.webp");
+  }
+
+  .wrap:has(.team) {
+    background-image: linear-gradient(
+        rgba(5, 7, 10, 0.58),
+        rgba(5, 7, 10, 0.58)
+      ),
+      url("/waves/stage-team.webp");
+  }
+
+  .stage {
+    --px: 1px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    aspect-ratio: auto;
+    container-type: normal;
+    width: 100%;
+    max-width: 460px;
+    overflow: visible;
+    padding: 20px 18px 24px;
+    border: 1px solid var(--field-border);
+    border-radius: 14px;
+    background: var(--card-bg);
+    backdrop-filter: blur(6px);
+  }
+
+  .individual {
+    --card-bg: rgba(244, 242, 238, 0.9);
+    --field-h: 46px;
+    --field-border-w: 2px;
+    --field-radius: 10px;
+  }
+
+  .team {
+    --card-bg: rgba(20, 23, 31, 0.88);
+    --field-h: 46px;
+    --field-border-w: 1px;
+    --field-radius: 3px;
+  }
+
+  .plate {
+    display: none;
+  }
+
+  .stage .title,
+  .stage .chip,
+  .stage .grid,
+  .stage .submit,
+  .stage .back {
+    position: static;
+    inset: auto;
+    transform: none;
+  }
+
+  .stage .back {
+    order: -2;
+    align-self: flex-start;
+    padding: 8px 14px;
+    font-size: 15px;
+  }
+
+  .stage .title {
+    font-size: 32px;
+    white-space: normal;
+    width: auto;
+  }
+
+  .stage .chip {
+    order: -1;
+    align-self: flex-end;
+    width: 128px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .stage .grid {
+    width: auto;
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+    column-gap: 0;
+  }
+
+  .stage .split {
+    grid-template-columns: 1fr;
+    row-gap: 16px;
+    column-gap: 0;
+  }
+
+  .label {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .control {
+    font-size: 16px; /* 16px keeps iOS from zooming the page on focus */
+    padding: 0 12px;
+  }
+
+  .stage .submit {
+    width: 100%;
+    height: 48px;
+    font-size: 17px;
+    letter-spacing: 0.06em;
+  }
+
+  .stage .submit:active {
+    transform: translateY(1px);
+    box-shadow: var(--press-shadow);
+  }
+}

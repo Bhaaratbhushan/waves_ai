@@ -1,0 +1,108 @@
+/*
+ * Sliding-door page transition.
+ *
+ * The panels are `main_card 1.png` cut along the crack painted into it -- the
+ * boundary between the gilded and scorched halves, traced row by row. Each
+ * panel is the full card on a full-viewport box with the other side of the
+ * crack knocked out of its alpha, so the two are exact complements: when they
+ * meet they interlock along the jagged split and reassemble the whole card.
+ *
+ * Both use identical `cover` sizing and centring, so they scale as one and the
+ * crack stays registered at any viewport ratio instead of the art stretching.
+ *
+ * The WAVES mark rides on top as a crest, lit from behind so the charcoal half
+ * of the lettering reads against the near-black card -- the same trick the
+ * source frames use, where the mark sits on open sky.
+ */
+
+.doors {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow: hidden; /* clips the parked panels so they cannot cause scrollbars */
+  pointer-events: none;
+}
+
+/* Only the closed state should swallow clicks. */
+.blocking {
+  pointer-events: auto;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;
+  transition: transform 460ms cubic-bezier(0.6, 0.02, 0.3, 1);
+}
+
+.left {
+  background-image: url("/waves/door-left.webp");
+}
+
+.right {
+  background-image: url("/waves/door-right.webp");
+}
+
+/* Parked off-screen: idle, and after the doors have opened again. */
+.open .left {
+  transform: translateX(-100%);
+}
+
+.open .right {
+  transform: translateX(100%);
+}
+
+.shut .left,
+.shut .right {
+  transform: translateX(0);
+}
+
+.crest {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(76vw, 940px);
+  aspect-ratio: 3 / 1.35;
+  /*
+   * Mark and glow are two layers of one background: the box is deliberately
+   * wider than the mark so the glow fades out inside it rather than being
+   * clipped to a visible rectangle.
+   */
+  background-image: url("/waves/waves-mark.webp"),
+    radial-gradient(
+      ellipse 47% 50% at 50% 50%,
+      rgba(255, 216, 156, 0.85),
+      rgba(255, 198, 128, 0.34) 55%,
+      rgba(255, 190, 120, 0) 80%
+    );
+  background-size: 64% auto, 100% 100%;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: opacity 200ms ease, transform 260ms ease;
+}
+
+/* Arrives as the doors meet, not while they are still travelling. */
+.shut .crest {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  transition:
+    opacity 260ms ease 200ms,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.3, 1) 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    transition-duration: 1ms;
+  }
+
+  .crest,
+  .shut .crest {
+    transition-duration: 1ms;
+    transition-delay: 0ms;
+  }
+}

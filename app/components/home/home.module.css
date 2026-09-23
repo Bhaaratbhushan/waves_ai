@@ -1,0 +1,422 @@
+/*
+ * Everything is laid out in Figma design pixels (1728×1117).
+ * --cover scales the scenic "stage" to fill the viewport (cropping like background-size: cover).
+ * --ui scales the interface pieces so they always fit and stay pinned to the viewport edges.
+ */
+.root {
+  --ui-s: max(var(--ui), 0.3);
+  --ease: cubic-bezier(0.65, 0, 0.35, 1);
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--font-yasharth), serif;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1728px;
+  height: 1117px;
+  transform: translate(-50%, -50%) scale(var(--cover));
+}
+
+.landingStage {
+  transform: translate(calc(-50% + var(--stage-x, 0px)), -50%) scale(var(--cover));
+}
+
+.layer {
+  position: absolute;
+  transform-origin: 0 0;
+  transition: transform 2s var(--ease);
+  will-change: transform;
+}
+
+.layer img {
+  object-fit: fill;
+}
+
+/* ---------- Loading ---------- */
+
+.loading {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  overflow: hidden;
+  background: #030100;
+  transition: opacity 0.5s ease, visibility 0s linear 0.5s;
+}
+
+.loadingHidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* The text and bar show at once; the painted background fades in when it has arrived. */
+.loadingBg {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.loadingBgReady {
+  opacity: 1;
+}
+
+.loadingText {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 880px;
+  margin: 0;
+  text-align: center;
+  font-size: 48px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #d3a555;
+}
+
+.dots {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.loadingTrack {
+  position: absolute;
+  left: 456px;
+  top: 967px;
+  width: 816px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 3px solid #d3a555;
+  border-radius: 8px;
+}
+
+.loadingFill {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  bottom: -3px;
+  border-radius: 8px;
+  background: #d3a555;
+  transition: width 0.4s ease-out;
+}
+
+/* ---------- Landing ---------- */
+
+.landing {
+  position: absolute;
+  inset: 0;
+  /* Waits for the loading screen to fade out, so the two logos never overlap. */
+  transition: opacity 0.6s ease 0.45s;
+}
+
+.landing[data-phase="loading"] {
+  opacity: 0;
+}
+
+.foreground img {
+  opacity: 0.92;
+}
+
+.ashesLayers {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.landing[data-theme="ashes"] .ashesLayers {
+  opacity: 1;
+}
+
+.logo {
+  filter: drop-shadow(0 4px 20px rgb(255 255 255 / 0.12));
+}
+
+.ui {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease 1.3s;
+  --text: #5c2e0e;
+  --count: #fff;
+}
+
+.landing[data-phase="landing"] .ui {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.landing[data-theme="ashes"] .ui {
+  --text: #e20000;
+  --count: #e20000;
+}
+
+/* Nav */
+
+.nav {
+  position: absolute;
+  top: calc(35px * var(--ui));
+  right: calc(49px * var(--ui));
+  display: flex;
+  gap: calc(35px * var(--ui));
+}
+
+.navLink {
+  display: inline-block;
+  font-size: calc(40px * var(--ui));
+  line-height: 1.15;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 0.3s ease, text-shadow 0.3s ease, color 0.3s ease;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  transform: scale(1.2);
+  text-shadow: 0 0 4px #cdcdcd;
+  outline: none;
+}
+
+/* Lantern — click to switch theme */
+
+.lantern {
+  position: absolute;
+  top: calc(96px * var(--ui));
+  right: 0;
+  width: 168px;
+  height: 390px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transform: scale(var(--ui-s));
+  transform-origin: top right;
+}
+
+.lanternBracket,
+.lanternSwing {
+  position: absolute;
+  inset: 0;
+  background: url("/assets/lantern-golden.webp") 0 0 / 100% 100% no-repeat;
+}
+
+.landing[data-theme="ashes"] .lanternBracket,
+.landing[data-theme="ashes"] .lanternSwing {
+  background-image: url("/assets/lantern-ashes.webp");
+}
+
+/* The wall bracket stays put; the chain and lantern swing from the hook. */
+.lanternBracket {
+  clip-path: polygon(0 0, 100% 0, 100% 95px, 95px 95px, 95px 34px, 0 34px);
+}
+
+/*
+ * The keyframes animate --swing; --sway scales it. Hover eases --sway to 0, so the
+ * lantern settles upright smoothly instead of snapping when the animation stops.
+ */
+@property --swing {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --sway {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.lanternSwing {
+  clip-path: polygon(0 34px, 95px 34px, 95px 95px, 100% 95px, 100% 100%, 0 100%);
+  transform-origin: 80px 28px;
+  transform: rotate(calc(var(--swing) * var(--sway)));
+  animation: swing 4s ease-in-out infinite;
+  transition: --sway 0.3s ease;
+}
+
+.lantern:hover .lanternSwing,
+.lantern:focus-visible .lanternSwing {
+  --sway: 0;
+}
+
+.lanternGlow {
+  position: absolute;
+  left: 20px;
+  top: 225px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(245 245 175 / 0.9), rgb(245 245 175 / 0) 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.landing[data-theme="ashes"] .lanternGlow {
+  background: radial-gradient(circle, rgb(255 4 4 / 0.9), rgb(255 4 4 / 0) 70%);
+}
+
+.lantern:hover .lanternGlow,
+.lantern:focus-visible .lanternGlow {
+  opacity: 1;
+}
+
+.lantern:focus-visible {
+  outline: none;
+}
+
+/* Countdown */
+
+/* A row whose pieces step down in size, like the Figma mock; flex keeps it tidy for any digit widths. */
+.countdown {
+  position: absolute;
+  left: 0;
+  bottom: calc(16px * var(--ui-s));
+  display: flex;
+  align-items: flex-start;
+  height: 150px;
+  padding-left: 8px;
+  transform: scale(var(--ui-s));
+  transform-origin: bottom left;
+  color: var(--count);
+  transition: color 0.3s ease;
+}
+
+.unit {
+  position: relative;
+  margin-top: var(--mt);
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-shadow: 0 10px 15px rgb(0 0 0 / 0.5);
+}
+
+.label {
+  position: absolute;
+  left: 50%;
+  top: calc(124px - var(--mt));
+  transform: translateX(-50%);
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  text-shadow: none;
+}
+
+.days { --mt: 4px; font-size: 128px; }
+.colon1 { --mt: 14px; margin-left: 10px; font-size: 90px; }
+.hours { --mt: 36px; margin-left: 22px; font-size: 90px; }
+.colon2 { --mt: 43px; margin-left: 24px; font-size: 64px; }
+.minutes { --mt: 58px; margin-left: 30px; font-size: 64px; }
+.days .label { font-size: 24px; }
+
+.hourglass {
+  flex: none;
+  margin: 47px 0 0 32px;
+  width: 84px;
+  height: 102px;
+  background: url("/assets/hourglass-golden.webp") 0 0 / 100% 100% no-repeat;
+}
+
+.landing[data-theme="ashes"] .hourglass {
+  background-image: url("/assets/hourglass-ashes.webp");
+}
+
+/* Register */
+
+.register {
+  position: absolute;
+  right: calc(60px * var(--ui-s));
+  bottom: calc(80px * var(--ui-s));
+  font-size: calc(96px * var(--ui-s));
+  line-height: 1;
+  color: #f9e6c1;
+  opacity: 0.8;
+  text-decoration: none;
+  text-transform: uppercase;
+  -webkit-text-stroke: 1px #fff;
+  text-shadow: 5px 5px 10px #000;
+  animation: glow 2.5s ease-in-out infinite;
+  transition: color 0.3s ease;
+}
+
+.register:hover,
+.register:focus-visible {
+  color: #a86f00;
+  outline: none;
+}
+
+.landing[data-theme="ashes"] .register {
+  color: #dc0000;
+  -webkit-text-stroke: 2px #000;
+  paint-order: stroke fill;
+}
+
+.landing[data-theme="ashes"] .register:hover,
+.landing[data-theme="ashes"] .register:focus-visible {
+  color: #000;
+  -webkit-text-stroke-color: #dc0000;
+}
+
+/* ---------- Animations ---------- */
+
+@keyframes swing {
+  0%, 100% { --swing: -5deg; }
+  50% { --swing: 5deg; }
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); opacity: 0.8; }
+  50% { filter: drop-shadow(0 0 14px rgb(249 230 193 / 0.55)); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 767px) {
+  /* Logo sits in the scaled (and possibly top-cropped) stage, so convert the nav's
+     screen position into stage pixels. */
+  .landing {
+    --logo-drop: calc((var(--nav-bottom, 0px) + 12px - var(--stage-top, 0px)) / var(--cover));
+  }
+
+  .nav {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 18px;
+  }
+
+  .navLink {
+    font-size: 20px;
+  }
+
+  .lantern {
+    top: 96px;
+  }
+
+  .register {
+    right: 16px;
+    bottom: calc(150px * var(--ui-s) + 28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .layer,
+  .landing,
+  .ui {
+    transition: none;
+  }
+
+  .lanternSwing,
+  .register,
+  .dots {
+    animation: none;
+  }
+}
