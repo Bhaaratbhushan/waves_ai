@@ -73,7 +73,7 @@ export default function GalleryPage() {
       className="relative isolate flex min-h-svh w-full items-center justify-center overflow-hidden bg-[#100202] text-[#f8e8c6]"
       aria-label="WAVES gallery"
     >
-      {/* Altar & Cavern Background */}
+      {/* Altar & Cavern Background (aligned on mobile to center the stone altar podium) */}
       <Image
         src="/gallery/bg-gallery-altar.png"
         alt=""
@@ -81,14 +81,14 @@ export default function GalleryPage() {
         priority
         quality={100}
         sizes="100vw"
-        className="object-cover object-center"
+        className="object-cover object-[60%_center] sm:object-center"
       />
       <Image
         src="/gallery/bg-red-glow.png"
         alt=""
         fill
         sizes="100vw"
-        className="pointer-events-none object-cover object-center opacity-80 mix-blend-screen"
+        className="pointer-events-none object-cover object-[60%_center] sm:object-center opacity-80 mix-blend-screen"
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,transparent_20%,rgba(13,0,0,0.2)_62%,rgba(8,0,0,0.72)_100%)]" />
 
@@ -109,7 +109,7 @@ export default function GalleryPage() {
             />
 
             {/* Floating Grimoire Container Positioned Directly on Altar Podium */}
-            <div className="grimoire-pedestal-anchor pointer-events-auto absolute h-[min(65vw,18rem)] w-[min(65vw,18rem)] sm:h-[min(20vw,18rem)] sm:w-[min(20vw,18rem)]">
+            <div className="grimoire-pedestal-anchor pointer-events-auto absolute h-[min(62vw,16.5rem)] w-[min(62vw,16.5rem)] sm:h-[min(20vw,18rem)] sm:w-[min(20vw,18rem)]">
               {/* Continuous Levitating Float Wrapper (always floats up and down) */}
               <div className="grimoire-floating-container relative h-full w-full">
                 <motion.button
@@ -126,14 +126,14 @@ export default function GalleryPage() {
                     alt="An ornate grimoire resting on the altar podium"
                     fill
                     priority
-                    sizes="(max-width: 640px) 65vw, 360px"
+                    sizes="(max-width: 640px) 60vw, 360px"
                     className="object-contain drop-shadow-[0_24px_28px_rgba(0,0,0,0.7)] transition-opacity duration-300 group-hover:opacity-0 group-focus-visible:opacity-0"
                   />
                   <Image
                     src="/gallery/book-grimoire_onhover.png"
                     alt=""
                     fill
-                    sizes="(max-width: 640px) 65vw, 360px"
+                    sizes="(max-width: 640px) 60vw, 360px"
                     className="object-contain opacity-0 drop-shadow-[0_28px_34px_rgba(200,30,10,0.55)] transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
                   />
                 </motion.button>
@@ -151,8 +151,11 @@ export default function GalleryPage() {
             tabIndex={0}
             aria-label="Gallery carousel. Use left and right arrow keys or slider to change cards."
           >
-            {/* 3D Cards Carousel Stage */}
-            <div className="relative h-[min(66svh,33rem)] w-full overflow-hidden [perspective:1200px] flex items-center justify-center">
+            {/* 3D Cards Carousel Stage matching MacBook reference:
+                - Clear spacing between cards (no overlap)
+                - Last cards in stack are half hidden at the screen edges
+            */}
+            <div className="relative h-[min(68svh,34rem)] w-full overflow-hidden [perspective:1200px] flex items-center justify-center">
               <motion.div
                 className="absolute inset-0 flex items-center justify-center"
                 drag="x"
@@ -168,10 +171,14 @@ export default function GalleryPage() {
                   const distance = Math.abs(signedOffset);
                   const isActive = distance === 0;
 
+                  // Scale & opacity matching MacBook reference:
+                  // Center card: scale 1.0, opacity 1
+                  // Adjacent cards (-1, +1): scale 0.85, opacity 0.85 (clear visible gap between cards)
+                  // Outer cards (-2, +2): scale 0.70, opacity 0.60 (half hidden beyond left and right screen borders)
                   const cardScale =
-                    distance === 0 ? 1 : distance === 1 ? 0.84 : 0.68;
+                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.70;
                   const cardOpacity =
-                    distance === 0 ? 1 : distance === 1 ? 0.74 : 0.38;
+                    distance === 0 ? 1 : distance === 1 ? 0.85 : 0.60;
                   const cardZIndex =
                     distance === 0 ? 30 : distance === 1 ? 20 : 10;
 
@@ -179,11 +186,13 @@ export default function GalleryPage() {
                     <motion.button
                       key={itemIndex}
                       type="button"
-                      className="absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11rem,23vw,21rem)] h-[clamp(17rem,35vw,31rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing"
+                      className={`absolute left-1/2 top-1/2 [transform-style:preserve-3d] w-[clamp(11rem,52vw,16rem)] sm:w-[clamp(10.5rem,19.5vw,18.5rem)] h-[clamp(17rem,80vw,25rem)] sm:h-[clamp(16.5rem,30.5vw,29rem)] -translate-x-1/2 -translate-y-1/2 cursor-grab touch-pan-y rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f8e8c6] focus-visible:ring-offset-4 focus-visible:ring-offset-[#220505] active:cursor-grabbing ${
+                        distance >= 2 ? "gallery-card-outer" : ""
+                      }`}
                       animate={{
-                        x: `calc(${signedOffset} * clamp(8.5rem, 18vw, 19.5rem))`,
+                        x: `calc(${signedOffset} * var(--gallery-card-spacing))`,
                         y: "0%",
-                        rotateY: signedOffset * -3.5,
+                        rotateY: 0,
                         scale: cardScale,
                         opacity: cardOpacity,
                         zIndex: cardZIndex,
@@ -201,8 +210,8 @@ export default function GalleryPage() {
                         src={card.src}
                         alt={card.alt}
                         fill
-                        sizes="(max-width: 640px) 60vw, 360px"
-                        className="object-contain drop-shadow-[0_20px_24px_rgba(0,0,0,0.85)]"
+                        sizes="(max-width: 640px) 55vw, 360px"
+                        className="object-contain drop-shadow-[0_22px_28px_rgba(0,0,0,0.85)]"
                         priority={isActive}
                       />
                     </motion.button>
@@ -211,8 +220,8 @@ export default function GalleryPage() {
               </motion.div>
             </div>
 
-            {/* Custom Golden Slider with Pentagram Thumb (matches video at 0:12) */}
-            <div className="z-40 mt-4 sm:mt-6 flex w-[min(88vw,28rem)] sm:w-[min(80vw,32rem)] flex-col items-center">
+            {/* Custom Golden Slider with Pentagram Thumb (wider track matching MacBook frame) */}
+            <div className="z-40 mt-5 sm:mt-8 flex w-[min(90vw,36rem)] sm:w-[min(82vw,46rem)] flex-col items-center">
               <label htmlFor="gallery-card-slider" className="sr-only">
                 Select gallery card
               </label>
@@ -280,6 +289,18 @@ export default function GalleryPage() {
       </AnimatePresence>
 
       <style jsx global>{`
+        :root {
+          --gallery-card-spacing: clamp(13rem, 25vw, 24rem);
+        }
+        @media (max-width: 639px) {
+          :root {
+            --gallery-card-spacing: clamp(12rem, 58vw, 18rem);
+          }
+          .gallery-card-outer {
+            opacity: 0 !important;
+            pointer-events: none;
+          }
+        }
         .grimoire-pedestal-anchor {
           left: max(58.5%, calc(50% + 13vh));
           top: 51.5%;
@@ -287,8 +308,8 @@ export default function GalleryPage() {
         }
         @media (max-width: 639px) {
           .grimoire-pedestal-anchor {
-            left: max(56.5%, calc(50% + 8vh));
-            top: 50.5%;
+            left: 55%;
+            top: 51%;
             transform: translate(-50%, -50%);
           }
         }
