@@ -33,10 +33,9 @@ export default function GalleryPage() {
   const [activeIndex, setActiveIndex] = useState(30);
   const [hasIntroAnimated, setHasIntroAnimated] = useState(false);
 
-  // Robust pointer drag vs tap tracking
-  const isDraggingRef = useRef(false);
-  const pointerStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
-  const lastJumpTimeRef = useRef(0);
+  // Pointer drag swipe vs click tracking
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const dragMaxDistRef = useRef(0);
 
   const activeCard = ((activeIndex % cards.length) + cards.length) % cards.length;
 
@@ -50,48 +49,36 @@ export default function GalleryPage() {
     setActiveIndex((current) => current + direction);
   }, []);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
-    isDraggingRef.current = false;
+  const handleStagePointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    dragMaxDistRef.current = 0;
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!pointerStartRef.current) return;
+  const handleStagePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragStartRef.current) return;
     const dist = Math.hypot(
-      e.clientX - pointerStartRef.current.x,
-      e.clientY - pointerStartRef.current.y,
+      e.clientX - dragStartRef.current.x,
+      e.clientY - dragStartRef.current.y,
     );
-    if (dist > 12) {
-      isDraggingRef.current = true;
+    if (dist > dragMaxDistRef.current) {
+      dragMaxDistRef.current = dist;
     }
   }, []);
 
-  const handlePointerUp = useCallback(
+  const handleStagePointerUp = useCallback(
     (e: React.PointerEvent) => {
-      if (!pointerStartRef.current) return;
-      const dx = e.clientX - pointerStartRef.current.x;
-      const dy = e.clientY - pointerStartRef.current.y;
+      if (!dragStartRef.current) return;
+      const dx = e.clientX - dragStartRef.current.x;
+      const dy = e.clientY - dragStartRef.current.y;
+      dragStartRef.current = null;
 
-      // Horizontal swipe detection (> 38px)
-      if (Math.abs(dx) > 38 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+      // Horizontal swipe detection (> 45px)
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
         changeCard(dx < 0 ? 1 : -1);
       }
-
-      setTimeout(() => {
-        isDraggingRef.current = false;
-        pointerStartRef.current = null;
-      }, 60);
     },
     [changeCard],
   );
-
-  const handleCardClick = useCallback((targetIndex: number) => {
-    if (isDraggingRef.current) return;
-    const now = Date.now();
-    if (now - lastJumpTimeRef.current < 200) return;
-    lastJumpTimeRef.current = now;
-    setActiveIndex(targetIndex);
-  }, []);
 
   const handleOpenBookIntro = useCallback(() => {
     if (!hasIntroAnimated) {
@@ -228,9 +215,9 @@ export default function GalleryPage() {
             */}
             <div 
               className="relative h-[min(68svh,36rem)] sm:h-[min(70svh,38rem)] w-full overflow-visible [perspective:1400px] flex items-center justify-center select-none"
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
+              onPointerDown={handleStagePointerDown}
+              onPointerMove={handleStagePointerMove}
+              onPointerUp={handleStagePointerUp}
             >
               {/* Soft atmospheric firelight glow behind center card with smooth radial falloff */}
               <div 
@@ -304,13 +291,9 @@ export default function GalleryPage() {
                             }
                           : { type: "spring", stiffness: 280, damping: 28 }
                       }
-                      onPointerUp={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(itemIndex);
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(itemIndex);
+                      onClick={() => {
+                        if (dragMaxDistRef.current > 25) return;
+                        setActiveIndex(itemIndex);
                       }}
                       aria-label={`${card.alt}${isActive ? ", selected" : ", click to jump to this card"}`}
                       aria-current={isActive ? "true" : undefined}
